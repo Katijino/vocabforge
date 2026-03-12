@@ -37,7 +37,6 @@ export function useGenerateStory() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({
-      userId,
       timeWindow,
       language,
     }: {

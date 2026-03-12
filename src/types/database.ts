@@ -1,238 +1,421 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.4"
+  }
   public: {
     Tables: {
-      word_lists: {
+      generated_stories: {
         Row: {
+          cache_key: string
+          content: string
+          generated_at: string
           id: string
-          user_id: string
-          name: string
           language: string
-          source: string | null
-          created_at: string
+          time_window: number
+          title: string
+          user_id: string
+          word_ids: string[]
         }
         Insert: {
+          cache_key: string
+          content: string
+          generated_at?: string
           id?: string
-          user_id: string
-          name: string
           language: string
-          source?: string | null
-          created_at?: string
+          time_window: number
+          title: string
+          user_id: string
+          word_ids?: string[]
         }
         Update: {
+          cache_key?: string
+          content?: string
+          generated_at?: string
           id?: string
-          user_id?: string
-          name?: string
           language?: string
-          source?: string | null
-          created_at?: string
-        }
-      }
-      words: {
-        Row: {
-          id: string
-          user_id: string
-          list_id: string | null
-          word: string
-          reading: string | null
-          definition: string | null
-          example: string | null
-          language: string
-          source: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          list_id?: string | null
-          word: string
-          reading?: string | null
-          definition?: string | null
-          example?: string | null
-          language?: string
-          source?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
+          time_window?: number
+          title?: string
           user_id?: string
-          list_id?: string | null
-          word?: string
-          reading?: string | null
-          definition?: string | null
-          example?: string | null
-          language?: string
-          source?: string | null
-          created_at?: string
+          word_ids?: string[]
         }
-      }
-      srs_cards: {
-        Row: {
-          id: string
-          user_id: string
-          word_id: string
-          ease_factor: number
-          interval_days: number
-          repetitions: number
-          due_date: string
-          last_reviewed: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          word_id: string
-          ease_factor?: number
-          interval_days?: number
-          repetitions?: number
-          due_date?: string
-          last_reviewed?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          word_id?: string
-          ease_factor?: number
-          interval_days?: number
-          repetitions?: number
-          due_date?: string
-          last_reviewed?: string | null
-        }
-      }
-      review_sessions: {
-        Row: {
-          id: string
-          user_id: string
-          started_at: string
-          finished_at: string | null
-          cards_reviewed: number
-          cards_correct: number
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          started_at?: string
-          finished_at?: string | null
-          cards_reviewed?: number
-          cards_correct?: number
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          started_at?: string
-          finished_at?: string | null
-          cards_reviewed?: number
-          cards_correct?: number
-        }
+        Relationships: []
       }
       review_logs: {
         Row: {
+          grade: number
           id: string
+          reviewed_at: string
           session_id: string
           user_id: string
           word_id: string
-          grade: number
-          reviewed_at: string
         }
         Insert: {
+          grade: number
           id?: string
+          reviewed_at?: string
           session_id: string
           user_id: string
           word_id: string
-          grade: number
-          reviewed_at?: string
         }
         Update: {
+          grade?: number
           id?: string
+          reviewed_at?: string
           session_id?: string
           user_id?: string
           word_id?: string
-          grade?: number
-          reviewed_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "review_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "review_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_logs_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      generated_stories: {
+      review_sessions: {
         Row: {
+          cards_correct: number
+          cards_reviewed: number
+          finished_at: string | null
           id: string
+          started_at: string
           user_id: string
-          title: string
-          content: string
-          language: string
-          word_ids: string[]
-          time_window: number
-          cache_key: string
-          generated_at: string
         }
         Insert: {
+          cards_correct?: number
+          cards_reviewed?: number
+          finished_at?: string | null
           id?: string
+          started_at?: string
           user_id: string
-          title: string
-          content: string
-          language: string
-          word_ids: string[]
-          time_window: number
-          cache_key: string
-          generated_at?: string
         }
         Update: {
+          cards_correct?: number
+          cards_reviewed?: number
+          finished_at?: string | null
           id?: string
+          started_at?: string
           user_id?: string
-          title?: string
-          content?: string
-          language?: string
-          word_ids?: string[]
-          time_window?: number
-          cache_key?: string
-          generated_at?: string
         }
+        Relationships: []
+      }
+      srs_cards: {
+        Row: {
+          due_date: string
+          ease_factor: number
+          id: string
+          interval_days: number
+          last_reviewed: string | null
+          repetitions: number
+          user_id: string
+          word_id: string
+        }
+        Insert: {
+          due_date?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string | null
+          repetitions?: number
+          user_id: string
+          word_id: string
+        }
+        Update: {
+          due_date?: string
+          ease_factor?: number
+          id?: string
+          interval_days?: number
+          last_reviewed?: string | null
+          repetitions?: number
+          user_id?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "srs_cards_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_settings: {
         Row: {
-          user_id: string
+          daily_review_limit: number
           learning_language: string
           review_time_window: number
-          daily_review_limit: number
-          stories_used_month: number
           stories_reset_at: string
-          words_count: number
+          stories_used_month: number
           stripe_customer_id: string | null
-          subscription_tier: 'free' | 'pro'
           subscription_status: string | null
+          subscription_tier: string
+          user_id: string
+          words_count: number
         }
         Insert: {
-          user_id: string
+          daily_review_limit?: number
           learning_language?: string
           review_time_window?: number
-          daily_review_limit?: number
-          stories_used_month?: number
           stories_reset_at?: string
-          words_count?: number
+          stories_used_month?: number
           stripe_customer_id?: string | null
-          subscription_tier?: 'free' | 'pro'
           subscription_status?: string | null
+          subscription_tier?: string
+          user_id: string
+          words_count?: number
         }
         Update: {
-          user_id?: string
+          daily_review_limit?: number
           learning_language?: string
           review_time_window?: number
-          daily_review_limit?: number
-          stories_used_month?: number
           stories_reset_at?: string
-          words_count?: number
+          stories_used_month?: number
           stripe_customer_id?: string | null
-          subscription_tier?: 'free' | 'pro'
           subscription_status?: string | null
+          subscription_tier?: string
+          user_id?: string
+          words_count?: number
         }
+        Relationships: []
       }
+      word_lists: {
+        Row: {
+          created_at: string
+          id: string
+          language: string
+          name: string
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          language?: string
+          name: string
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          language?: string
+          name?: string
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      words: {
+        Row: {
+          created_at: string
+          definition: string | null
+          example: string | null
+          id: string
+          language: string
+          list_id: string | null
+          reading: string | null
+          source: string | null
+          user_id: string
+          word: string
+        }
+        Insert: {
+          created_at?: string
+          definition?: string | null
+          example?: string | null
+          id?: string
+          language?: string
+          list_id?: string | null
+          reading?: string | null
+          source?: string | null
+          user_id: string
+          word: string
+        }
+        Update: {
+          created_at?: string
+          definition?: string | null
+          example?: string | null
+          id?: string
+          language?: string
+          list_id?: string | null
+          reading?: string | null
+          source?: string | null
+          user_id?: string
+          word?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "words_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "word_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }
 
-// Convenience row types
-export type WordList = Database['public']['Tables']['word_lists']['Row']
-export type Word = Database['public']['Tables']['words']['Row']
-export type SrsCard = Database['public']['Tables']['srs_cards']['Row']
-export type ReviewSession = Database['public']['Tables']['review_sessions']['Row']
-export type ReviewLog = Database['public']['Tables']['review_logs']['Row']
-export type GeneratedStory = Database['public']['Tables']['generated_stories']['Row']
-export type UserSettings = Database['public']['Tables']['user_settings']['Row']
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export type Word = Tables<'words'>
+export type SrsCard = Tables<'srs_cards'>
+export type GeneratedStory = Tables<'generated_stories'>
+export type UserSettings = Tables<'user_settings'>
+export type WordList = Tables<'word_lists'>
+export type ReviewSession = Tables<'review_sessions'>
+export type ReviewLog = Tables<'review_logs'>
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const
