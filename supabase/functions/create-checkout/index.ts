@@ -52,6 +52,7 @@ serve(async (req: Request) => {
         quantity: 1,
       }],
       mode: 'subscription',
+      subscription_data: { trial_period_days: 30 },
       success_url: `${origin}/billing?success=1`,
       cancel_url: `${origin}/billing`,
       metadata: { user_id: user.id },

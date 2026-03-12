@@ -94,11 +94,8 @@ export default function Billing() {
           </div>
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 4 }}>Pro</div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>$1</div>
-              <div style={{ color: '#64748b', fontSize: '0.8rem', textDecoration: 'line-through' }}>$10</div>
-            </div>
-            <div style={{ color: '#4ade80', fontSize: '0.8rem', marginTop: 4, fontWeight: 600 }}>first month — then $10/mo</div>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>$10</div>
+            <div style={{ color: '#4ade80', fontSize: '0.8rem', marginTop: 4, fontWeight: 600 }}>30-day free trial, then $10/mo</div>
           </div>
           <ul style={featureList}>
             <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> <strong>Unlimited</strong> vocabulary words</li>
@@ -137,7 +134,7 @@ export default function Billing() {
                 boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
               }}
             >
-              {loading ? 'Redirecting…' : 'Start for $1 →'}
+              {loading ? 'Redirecting…' : 'Start Free Trial →'}
             </button>
           )}
         </div>
