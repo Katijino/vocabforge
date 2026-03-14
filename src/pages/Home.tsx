@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme } from '../hooks/useTheme'
+import PageHeader from '../components/ui/PageHeader'
+import FadeIn from '../components/ui/FadeIn'
 import { useDecks, useCreateDeck, useUpdateDeck, useDeleteDeck, useDeckStats } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { useGenerateStory } from '../hooks/useStories'
@@ -182,6 +185,7 @@ function DeckModal({ deck, onSave, onClose }: DeckModalProps) {
   const [name, setName] = useState(deck?.name ?? '')
   const [desc, setDesc] = useState(deck?.description ?? '')
   const isNew = !deck?.id
+  const { t } = useTheme()
 
   return (
     <div style={{
@@ -190,10 +194,10 @@ function DeckModal({ deck, onSave, onClose }: DeckModalProps) {
       padding: '1rem',
     }} onClick={onClose}>
       <div style={{
-        background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)',
+        background: t.navBg, border: `1px solid ${t.surfaceBorder}`,
         borderRadius: 16, padding: '1.5rem', width: '100%', maxWidth: 420,
       }} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
+        <h2 style={{ margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 700, color: t.textPrimary }}>
           {isNew ? 'New Deck' : 'Edit Deck'}
         </h2>
         <div style={{ marginBottom: '1rem' }}>
@@ -237,9 +241,9 @@ function DeckModal({ deck, onSave, onClose }: DeckModalProps) {
           <button onClick={onClose} style={{
             padding: '0.65rem 1.25rem',
             borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.1)',
+            border: `1px solid ${t.surfaceBorder}`,
             background: 'transparent',
-            color: '#94a3b8',
+            color: t.textSecondary,
             cursor: 'pointer',
             fontSize: '0.9rem',
           }}>
@@ -255,6 +259,7 @@ function DeckModal({ deck, onSave, onClose }: DeckModalProps) {
 
 export default function Home() {
   const { isMobile } = useBreakpoint()
+  const { t } = useTheme()
   const user = useAuthStore((s) => s.user)
   const { data: settings } = useUserSettings(user?.id ?? '')
   const { data: decks = [] } = useDecks(user?.id ?? '')
@@ -307,7 +312,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '1.5rem 1rem 4rem' : '3rem 2rem 6rem', color: t.textPrimary }}>
       {showModal && (
         <DeckModal
           deck={editingDeck}
@@ -316,14 +321,11 @@ export default function Home() {
         />
       )}
 
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.2rem' }}>My Decks</h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>
-            Hi {username} · {language !== 'en' ? `Learning: ${language}` : 'Set your language in Settings'}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        label="DASHBOARD"
+        title="Good to see you."
+        subtitle={`Hi ${username} · ${language !== 'en' ? `Learning: ${language}` : 'Set your language in Settings'}`}
+      />
 
       {decks.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
@@ -349,23 +351,25 @@ export default function Home() {
           </button>
         </div>
       ) : (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '1rem',
-        }}>
-          {decks.map((deck) => (
-            <DeckCard
-              key={deck.id}
-              deck={deck}
-              userId={user.id}
-              language={language}
-              onEdit={openEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-          <AddDeckCard onAdd={openCreate} />
-        </div>
+        <FadeIn delay={0.1}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: '1rem',
+          }}>
+            {decks.map((deck) => (
+              <DeckCard
+                key={deck.id}
+                deck={deck}
+                userId={user.id}
+                language={language}
+                onEdit={openEdit}
+                onDelete={handleDelete}
+              />
+            ))}
+            <AddDeckCard onAdd={openCreate} />
+          </div>
+        </FadeIn>
       )}
     </div>
   )
@@ -376,8 +380,8 @@ export default function Home() {
 const deckCardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.02)',
   border: '1px solid rgba(255,255,255,0.07)',
-  borderRadius: 16,
-  padding: '1.5rem',
+  borderRadius: 12,
+  padding: '1.75rem 2rem',
 }
 
 function statBadge(type: 'due' | 'new' | 'empty'): React.CSSProperties {
@@ -430,7 +434,8 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.75rem',
   fontWeight: 600,
-  color: '#64748b',
+  color: 'inherit',
+  opacity: 0.5,
   marginBottom: '0.3rem',
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -441,9 +446,9 @@ const inputStyle: React.CSSProperties = {
   boxSizing: 'border-box',
   padding: '0.6rem 0.85rem',
   borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(255,255,255,0.04)',
-  color: '#f1f5f9',
+  border: '1px solid var(--surface-border)',
+  background: 'var(--surface)',
+  color: 'inherit',
   fontSize: '0.9rem',
   outline: 'none',
   fontFamily: 'inherit',

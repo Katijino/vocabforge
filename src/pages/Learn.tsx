@@ -6,10 +6,14 @@ import { useDecks, useMoveWordsToDeck } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { useUIStore } from '../stores/uiStore'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme, fontSerif } from '../hooks/useTheme'
 import UpgradePrompt from '../components/UpgradePrompt'
+import PageHeader from '../components/ui/PageHeader'
+import FadeIn from '../components/ui/FadeIn'
 
 export default function Learn() {
   const { isMobile } = useBreakpoint()
+  const { t } = useTheme()
   const user = useAuthStore((s) => s.user)
   const [searchParams, setSearchParams] = useSearchParams()
   const deckFilter = searchParams.get('deck')
@@ -157,7 +161,7 @@ export default function Learn() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '1.5rem 1rem 4rem' : '3rem 2rem 6rem', color: t.textPrimary }}>
       {showUpgrade && <UpgradePrompt reason="words" onClose={() => setShowUpgrade(false)} />}
 
       {/* Bulk delete confirm modal */}
@@ -222,25 +226,22 @@ export default function Learn() {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.25rem' }}>
-            {activeDeck ? activeDeck.name : deckFilter === 'undecked' ? 'No Deck' : 'My Words'}
-          </h1>
-          <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>
-            {words.length} words · {settings?.learning_language ?? 'Language not set'}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <Link to="/import" style={secondaryBtn}>Import from file</Link>
-          <button
-            onClick={() => setConfirmDeleteAll(true)}
-            style={{ ...dangerBtn, padding: '0.55rem 1rem', fontSize: '0.8rem' }}
-          >
-            Delete All
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        label="LEARN"
+        title="Vocabulary"
+        subtitle={`${words.length} words · ${settings?.learning_language ?? 'Language not set'}`}
+        action={
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <Link to="/import" style={secondaryBtn}>Import from file</Link>
+            <button
+              onClick={() => setConfirmDeleteAll(true)}
+              style={{ ...dangerBtn, padding: '0.55rem 1rem', fontSize: '0.8rem' }}
+            >
+              Delete All
+            </button>
+          </div>
+        }
+      />
 
       {/* Deck filter */}
       {decks.length > 0 && (
@@ -419,7 +420,7 @@ export default function Learn() {
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                        <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '1rem' }}>{w.word}</span>
+                        <span style={{ fontFamily: fontSerif, color: '#e2e8f0', fontWeight: 400, fontSize: '1.1rem' }}>{w.word}</span>
                         {w.reading && <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{w.reading}</span>}
                         <span style={{ color: '#475569', fontSize: '0.75rem', background: 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: 4 }}>
                           {w.language}
@@ -474,8 +475,8 @@ export default function Learn() {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.02)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  background: 'var(--surface)',
+  border: '1px solid var(--surface-border)',
   borderRadius: 16,
   padding: '1.5rem',
 }
@@ -484,7 +485,8 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.75rem',
   fontWeight: 600,
-  color: '#64748b',
+  color: 'inherit',
+  opacity: 0.5,
   marginBottom: '0.3rem',
   textTransform: 'uppercase',
   letterSpacing: '0.06em',
@@ -493,9 +495,9 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   padding: '0.65rem 0.85rem',
   borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(255,255,255,0.04)',
-  color: '#f1f5f9',
+  border: '1px solid var(--surface-border)',
+  background: 'var(--surface)',
+  color: 'inherit',
   fontSize: '0.9rem',
   outline: 'none',
   fontFamily: 'inherit',
@@ -506,9 +508,9 @@ const inputStyle: React.CSSProperties = {
 const selectStyle: React.CSSProperties = {
   padding: '0.6rem 0.85rem',
   borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(15,23,42,0.9)',
-  color: '#f1f5f9',
+  border: '1px solid var(--surface-border)',
+  background: 'var(--bg)',
+  color: 'inherit',
   fontSize: '0.875rem',
   outline: 'none',
   fontFamily: 'inherit',

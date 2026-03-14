@@ -5,6 +5,22 @@ import type { Database } from '../types/database'
 
 type WordInsert = Database['public']['Tables']['words']['Insert']
 
+export function useWordsByIds(wordIds: string[]) {
+  return useQuery({
+    queryKey: ['words-by-ids', wordIds.slice().sort().join(',')],
+    queryFn: async () => {
+      if (wordIds.length === 0) return []
+      const { data, error } = await supabase
+        .from('words')
+        .select('*')
+        .in('id', wordIds)
+      if (error) throw error
+      return data ?? []
+    },
+    enabled: wordIds.length > 0,
+  })
+}
+
 export function useWords(userId: string, deckId?: string | null) {
   return useQuery({
     queryKey: ['words', userId, deckId ?? 'all'],

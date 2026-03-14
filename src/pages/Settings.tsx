@@ -4,6 +4,8 @@ import { useForm } from 'react-hook-form'
 import { useAuthStore } from '../stores/authStore'
 import { useUserSettings, useUpdateSettings } from '../hooks/useUserSettings'
 import { useUIStore } from '../stores/uiStore'
+import { useTheme } from '../hooks/useTheme'
+import PageHeader from '../components/ui/PageHeader'
 
 interface SettingsForm {
   learning_language: string
@@ -30,6 +32,7 @@ export default function Settings() {
   const { data: settings } = useUserSettings(user?.id ?? '')
   const updateSettings = useUpdateSettings()
   const addToast = useUIStore((s) => s.addToast)
+  const { t } = useTheme()
   const [saving, setSaving] = useState(false)
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SettingsForm>({
@@ -72,8 +75,8 @@ export default function Settings() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 2rem' }}>Settings</h1>
+    <div style={{ maxWidth: 640, margin: '0 auto', padding: '3rem 2rem 6rem', color: t.textPrimary }}>
+      <PageHeader label="SETTINGS" title="Account Settings" />
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div style={cardStyle}>
@@ -165,26 +168,27 @@ export default function Settings() {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.02)',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 16,
-  padding: '1.5rem',
+  background: 'var(--surface)',
+  border: '1px solid var(--surface-border)',
+  borderRadius: 12,
+  padding: '1.75rem 2rem',
 }
 
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.825rem',
   fontWeight: 600,
-  color: '#94a3b8',
+  color: 'inherit',
+  opacity: 0.6,
   marginBottom: '0.4rem',
 }
 
 const inputStyle: React.CSSProperties = {
   padding: '0.65rem 0.85rem',
   borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(255,255,255,0.04)',
-  color: '#f1f5f9',
+  border: '1px solid var(--surface-border)',
+  background: 'var(--surface)',
+  color: 'inherit',
   fontSize: '0.9rem',
   outline: 'none',
   fontFamily: 'inherit',
@@ -194,7 +198,6 @@ const inputStyle: React.CSSProperties = {
 
 const selectStyle: React.CSSProperties = {
   ...inputStyle,
-  background: '#1e293b',
   cursor: 'pointer',
 }
 

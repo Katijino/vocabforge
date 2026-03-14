@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme } from '../hooks/useTheme'
+import PageHeader from '../components/ui/PageHeader'
+import FadeIn from '../components/ui/FadeIn'
 import { useDueCards, useNewCards, useNewCardsLearnedToday } from '../hooks/useWords'
 import { useDecks } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
@@ -15,6 +18,7 @@ type Phase = 'idle' | 'learning' | 'reviewing' | 'done'
 
 export default function Review() {
   const { isMobile } = useBreakpoint()
+  const { t } = useTheme()
   const user = useAuthStore((s) => s.user)
   const [searchParams] = useSearchParams()
   const deckId = searchParams.get('deck') ?? undefined
@@ -70,18 +74,19 @@ export default function Review() {
   const isLoading = dueLoading || newLoading
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-        <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.875rem' }}>← Decks</Link>
+    <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '1.5rem 1rem 4rem' : '3rem 2rem 6rem', color: t.textPrimary }}>
+      <div style={{ marginBottom: '0.5rem' }}>
+        <Link to="/" style={{ color: t.textMuted, textDecoration: 'none', fontSize: '0.875rem' }}>← Decks</Link>
       </div>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>{title}</h1>
+      <PageHeader label="REVIEW" title={deck ? `Reviewing: ${deck.name}` : 'Flashcard Review'} />
 
       {phase === 'idle' && (
         <>
           {isLoading ? (
             <div style={{ textAlign: 'center', color: '#64748b', padding: '3rem' }}>Loading cards…</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
+            <FadeIn delay={0.05}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {/* Learn section */}
               <div style={sectionCard}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -138,6 +143,7 @@ export default function Review() {
                 )}
               </div>
             </div>
+            </FadeIn>
           )}
         </>
       )}
@@ -161,6 +167,7 @@ export default function Review() {
       )}
 
       {phase === 'done' && result && (
+        <FadeIn>
         <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
           <div style={{ fontSize: 64, marginBottom: '1rem' }}>
             {result.correct === result.total ? '🏆' : result.correct >= result.total / 2 ? '👍' : '💪'}
@@ -168,11 +175,13 @@ export default function Review() {
           <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: 8 }}>
             {result.mode === 'learn' ? 'Learning complete!' : 'Session complete!'}
           </h2>
-          <p style={{ color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
-            You got <strong style={{ color: '#a5b4fc' }}>{result.correct}</strong> out of{' '}
-            <strong style={{ color: '#a5b4fc' }}>{result.total}</strong> correct (
-            {Math.round((result.correct / result.total) * 100)}%)
-          </p>
+          <div style={{ borderLeft: '2px solid rgba(99,102,241,0.25)', paddingLeft: 24, textAlign: 'left', display: 'inline-block', marginBottom: '2rem' }}>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', margin: 0 }}>
+              You got <strong style={{ color: '#a5b4fc' }}>{result.correct}</strong> out of{' '}
+              <strong style={{ color: '#a5b4fc' }}>{result.total}</strong> correct (
+              {Math.round((result.correct / result.total) * 100)}%)
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button
               onClick={() => { setPhase('idle'); setResult(null); setSessionId('') }}
@@ -202,6 +211,7 @@ export default function Review() {
             </Link>
           </div>
         </div>
+        </FadeIn>
       )}
     </div>
   )
@@ -227,8 +237,8 @@ const primaryBtn: React.CSSProperties = {
 }
 
 const sectionCard: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.02)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  background: 'var(--surface)',
+  border: '1px solid var(--surface-border)',
   borderRadius: 16,
   padding: '1.5rem',
 }

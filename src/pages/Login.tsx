@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { supabase } from '../lib/supabase'
+import { useTheme, fontSerif, fontSans } from '../hooks/useTheme'
 
 interface SignInFields {
   email: string
@@ -14,7 +15,9 @@ interface SignUpFields extends SignInFields {
 
 export default function Login() {
   const navigate = useNavigate()
+  const { t } = useTheme()
   const [mode, setMode] = useState<'signin' | 'signup'>('signin')
+  const [btnHover, setBtnHover] = useState(false)
   const [serverError, setServerError] = useState('')
   const [signUpSuccess, setSignUpSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -62,7 +65,7 @@ export default function Login() {
       padding: '2rem',
     }}>
       <div style={{
-        background: 'rgba(255,255,255,0.04)',
+        background: t.navBg,
         border: '1px solid rgba(99,102,241,0.2)',
         borderRadius: 20,
         backdropFilter: 'blur(20px)',
@@ -81,17 +84,20 @@ export default function Login() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 0.75rem',
+            margin: '0 auto 1rem',
             fontSize: 26,
             boxShadow: '0 8px 24px rgba(99,102,241,0.35)',
           }}>
             ⚡
           </div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#f1f5f9', margin: '0 0 0.25rem' }}>
-            VocabForge
+          <div style={{ fontFamily: fontSans, fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#6366f1', marginBottom: 10 }}>
+            VOCABFORGE
+          </div>
+          <h1 style={{ fontFamily: fontSerif, fontSize: '1.75rem', fontWeight: 400, color: t.textPrimary, margin: '0 0 0.4rem', lineHeight: 1.15 }}>
+            {mode === 'signin' ? 'Welcome back.' : 'Get started.'}
           </h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', margin: 0 }}>
-            Learn vocabulary with AI-powered stories
+          <p style={{ fontFamily: fontSans, color: t.textMuted, fontSize: '0.875rem', margin: 0 }}>
+            {mode === 'signin' ? 'Sign in to continue your learning.' : 'Create an account to start learning.'}
           </p>
         </div>
 
@@ -201,12 +207,16 @@ export default function Login() {
                 border: 'none',
                 background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 color: '#fff',
-                fontWeight: 700,
+                fontFamily: fontSans,
+                fontWeight: 600,
                 fontSize: '1rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'opacity 0.15s',
-                boxShadow: loading ? 'none' : '0 4px 20px rgba(99,102,241,0.35)',
+                boxShadow: loading ? 'none' : btnHover ? '0 4px 20px rgba(99,102,241,0.4)' : '0 2px 12px rgba(99,102,241,0.25)',
+                transform: !loading && btnHover ? 'translateY(-1px)' : 'none',
+                transition: 'all 0.25s cubic-bezier(0.16,1,0.3,1)',
               }}
+              onMouseEnter={() => setBtnHover(true)}
+              onMouseLeave={() => setBtnHover(false)}
             >
               {loading ? 'Please wait…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </button>
@@ -214,7 +224,7 @@ export default function Login() {
         )}
 
         <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <Link to="/" style={{ color: '#475569', fontSize: '0.85rem', textDecoration: 'none' }}>
+          <Link to="/" style={{ color: 'inherit', opacity: 0.5, fontSize: '0.85rem', textDecoration: 'none' }}>
             ← Back to Home
           </Link>
         </div>
@@ -227,7 +237,8 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.825rem',
   fontWeight: 600,
-  color: '#94a3b8',
+  color: 'inherit',
+  opacity: 0.6,
   marginBottom: '0.35rem',
 }
 
@@ -235,9 +246,9 @@ const inputStyle: React.CSSProperties = {
   width: '100%',
   padding: '0.65rem 0.85rem',
   borderRadius: 8,
-  border: '1px solid rgba(255,255,255,0.08)',
-  background: 'rgba(255,255,255,0.04)',
-  color: '#f1f5f9',
+  border: '1px solid var(--surface-border)',
+  background: 'var(--surface)',
+  color: 'inherit',
   fontSize: '0.95rem',
   outline: 'none',
   boxSizing: 'border-box',

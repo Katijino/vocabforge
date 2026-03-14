@@ -1,4 +1,5 @@
 import type { Word } from '../types/database'
+import { fontSerif, fontSans } from '../hooks/useTheme'
 
 interface WordCardProps {
   word: Word
@@ -45,11 +46,11 @@ export default function WordCard({ word, flipped, onClick }: WordCardProps) {
           <div style={{ color: '#64748b', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>
             {word.language}
           </div>
-          <div style={{ color: '#f1f5f9', fontSize: '2.25rem', fontWeight: 700, textAlign: 'center', lineHeight: 1.2 }}>
+          <div style={{ fontFamily: fontSerif, color: '#f1f5f9', fontSize: '2.25rem', fontWeight: 400, textAlign: 'center', lineHeight: 1.2 }}>
             {word.word}
           </div>
           {word.reading && (
-            <div style={{ color: '#94a3b8', fontSize: '1rem' }}>
+            <div style={{ fontFamily: fontSerif, color: '#94a3b8', fontSize: '1rem', fontStyle: 'italic' }}>
               {word.reading}
             </div>
           )}
@@ -78,7 +79,7 @@ export default function WordCard({ word, flipped, onClick }: WordCardProps) {
           <div style={{ color: '#a5b4fc', fontSize: '0.75rem', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
             Definition
           </div>
-          <div style={{ color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.5 }}>
+          <div style={{ fontFamily: fontSans, color: '#f1f5f9', fontSize: '1.3rem', fontWeight: 600, textAlign: 'center', lineHeight: 1.5 }}>
             {word.definition ?? '—'}
           </div>
           {word.example && (

@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme } from '../hooks/useTheme'
+import PageHeader from '../components/ui/PageHeader'
 import { useAuthStore } from '../stores/authStore'
 import { useBulkAddWords } from '../hooks/useWords'
 import { useDecks, useCreateDeck } from '../hooks/useDecks'
@@ -47,6 +49,7 @@ interface ApkgMappingState {
 
 export default function Import() {
   const { isMobile } = useBreakpoint()
+  const { t } = useTheme()
   const user = useAuthStore((s) => s.user)
   const [searchParams] = useSearchParams()
   const { data: settings } = useUserSettings(user?.id ?? '')
@@ -249,13 +252,14 @@ export default function Import() {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '1.25rem 1rem 3rem' : '2rem 1.5rem 5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '1.5rem 1rem 4rem' : '3rem 2rem 6rem', color: t.textPrimary }}>
       {showUpgrade && <UpgradePrompt reason="words" onClose={() => setShowUpgrade(false)} />}
 
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Import Words</h1>
-      <p style={{ color: '#64748b', margin: '0 0 2rem', fontSize: '0.9rem' }}>
-        Import vocabulary from CSV, Anki, or sync with Duolingo.
-      </p>
+      <PageHeader
+        label="IMPORT"
+        title="Import Vocabulary"
+        subtitle="Import vocabulary from CSV, Anki, or sync with Duolingo."
+      />
 
       {/* Tab bar */}
       <div style={{

@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme } from '../hooks/useTheme'
 import { supabase } from '../lib/supabase'
+import PageHeader from '../components/ui/PageHeader'
 
 function isValidRedirectUrl(url: unknown): url is string {
   if (typeof url !== 'string') return false
@@ -17,6 +19,7 @@ function isValidRedirectUrl(url: unknown): url is string {
 
 export default function Billing() {
   const { isMobile } = useBreakpoint()
+  const { t } = useTheme()
   const user = useAuthStore((s) => s.user)
   const { data: settings } = useUserSettings(user?.id ?? '')
   const [loading, setLoading] = useState(false)
@@ -87,11 +90,12 @@ export default function Billing() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Plans & Billing</h1>
-      <p style={{ color: '#64748b', margin: '0 0 2.5rem', fontSize: '0.9rem' }}>
-        Current plan: <strong style={{ color: isPro ? '#a5b4fc' : '#94a3b8' }}>{isPro ? 'Pro' : 'Free'}</strong>
-      </p>
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '1.5rem 1rem 4rem' : '3rem 2rem 6rem', color: t.textPrimary }}>
+      <PageHeader
+        label="BILLING"
+        title="Subscription"
+        subtitle={`Current plan: ${isPro ? 'Pro' : 'Free'}`}
+      />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
         {/* Free plan */}
@@ -146,14 +150,16 @@ export default function Billing() {
             <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>$10</div>
             <div style={{ color: '#4ade80', fontSize: '0.8rem', marginTop: 4, fontWeight: 600 }}>7-day free trial, then $10/mo</div>
           </div>
-          <ul style={featureList}>
-            <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> <strong>Unlimited</strong> vocabulary words</li>
-            <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> <strong>Unlimited</strong> AI stories</li>
-            <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> SRS flashcard review</li>
-            <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> CSV / Anki import</li>
-            <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> Duolingo sync</li>
-            <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> Priority support</li>
-          </ul>
+          <div style={{ borderLeft: '2px solid rgba(99,102,241,0.3)', paddingLeft: 20 }}>
+            <ul style={featureList}>
+              <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> <strong>Unlimited</strong> vocabulary words</li>
+              <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> <strong>Unlimited</strong> AI stories</li>
+              <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> SRS flashcard review</li>
+              <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> CSV / Anki import</li>
+              <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> Duolingo sync</li>
+              <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> Priority support</li>
+            </ul>
+          </div>
 
           {error && (
             <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '0.6rem 0.85rem', color: '#fca5a5', fontSize: '0.825rem', margin: '1rem 0' }}>
@@ -249,10 +255,10 @@ export default function Billing() {
 }
 
 const cardStyle: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.02)',
-  border: '1px solid rgba(255,255,255,0.06)',
-  borderRadius: 16,
-  padding: '1.75rem',
+  background: 'var(--surface)',
+  border: '1px solid var(--surface-border)',
+  borderRadius: 12,
+  padding: '1.75rem 2rem',
 }
 
 const featureList: React.CSSProperties = {

@@ -6,11 +6,11 @@ import type { SrsCard, Word } from '../types/database'
 
 type CardWithWord = SrsCard & { words: Word }
 
-const GRADES: Array<{ value: 0 | 2 | 3 | 5; label: string; color: string; bg: string }> = [
-  { value: 0, label: 'Again', color: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  { value: 2, label: 'Hard', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  { value: 3, label: 'Good', color: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-  { value: 5, label: 'Easy', color: '#6366f1', bg: 'rgba(99,102,241,0.12)' },
+const GRADES: Array<{ value: 0 | 2 | 3 | 5; label: string; color: string; bg: string; glow: string }> = [
+  { value: 0, label: 'Again', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', glow: '0 2px 12px rgba(239,68,68,0.3)' },
+  { value: 2, label: 'Hard',  color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', glow: '0 2px 12px rgba(245,158,11,0.3)' },
+  { value: 3, label: 'Good',  color: '#22c55e', bg: 'rgba(34,197,94,0.12)',  glow: '0 2px 12px rgba(34,197,94,0.3)' },
+  { value: 5, label: 'Easy',  color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', glow: '0 2px 12px rgba(59,130,246,0.3)' },
 ]
 
 interface FlashcardDeckProps {
@@ -24,6 +24,7 @@ export default function FlashcardDeck({ cards, userId, sessionId, onComplete }: 
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [correct, setCorrect] = useState(0)
+  const [hoveredGrade, setHoveredGrade] = useState<number | null>(null)
   const gradingRef = useRef(false)
   const gradeCard = useGradeCard()
 
@@ -112,10 +113,12 @@ export default function FlashcardDeck({ cards, userId, sessionId, onComplete }: 
                 fontWeight: 700,
                 cursor: 'pointer',
                 fontSize: '0.9rem',
-                transition: 'transform 0.1s',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                boxShadow: hoveredGrade === g.value ? g.glow : 'none',
+                transform: hoveredGrade === g.value ? 'scale(1.05)' : 'scale(1)',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)' }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)' }}
+              onMouseEnter={() => setHoveredGrade(g.value)}
+              onMouseLeave={() => setHoveredGrade(null)}
             >
               {g.label}
             </button>
