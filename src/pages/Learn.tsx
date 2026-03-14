@@ -4,7 +4,6 @@ import { useAuthStore } from '../stores/authStore'
 import { useWords, useAddWord, useDeleteWord, useBulkDeleteWords, useDeleteAllWords } from '../hooks/useWords'
 import { useDecks, useMoveWordsToDeck } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
-import { useUsageLimits } from '../hooks/useUsageLimits'
 import { useUIStore } from '../stores/uiStore'
 import UpgradePrompt from '../components/UpgradePrompt'
 
@@ -21,7 +20,7 @@ export default function Learn() {
   const bulkDelete = useBulkDeleteWords()
   const deleteAllWords = useDeleteAllWords()
   const moveWordsToDeck = useMoveWordsToDeck()
-  const limits = useUsageLimits(user?.id ?? '')
+
   const addToast = useUIStore((s) => s.addToast)
 
   const [newWord, setNewWord] = useState('')

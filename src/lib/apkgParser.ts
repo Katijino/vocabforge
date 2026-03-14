@@ -76,7 +76,7 @@ export async function parseApkg(file: File): Promise<ApkgParsed> {
         `SELECT flds FROM notes WHERE CAST(mid AS TEXT) = ?`,
         [model.id],
       )
-      const rows: string[][] = (result[0]?.values ?? []).map((row) =>
+      const rows: string[][] = (result[0]?.values ?? []).map((row: unknown[]) =>
         (row[0] as string).split('\x1f').map(stripField),
       )
       if (rows.length > 0) rowsByModel.set(model.id, rows)
