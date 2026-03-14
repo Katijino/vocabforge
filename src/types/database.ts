@@ -24,6 +24,7 @@ export type Database = {
           language: string
           time_window: number
           title: string
+          title_translation: string | null
           user_id: string
           word_ids: string[]
         }
@@ -36,6 +37,7 @@ export type Database = {
           language: string
           time_window: number
           title: string
+          title_translation?: string | null
           user_id: string
           word_ids?: string[]
         }
@@ -48,6 +50,7 @@ export type Database = {
           language?: string
           time_window?: number
           title?: string
+          title_translation?: string | null
           user_id?: string
           word_ids?: string[]
         }

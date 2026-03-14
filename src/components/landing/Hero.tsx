@@ -169,7 +169,7 @@ export default function Hero() {
                   transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
               >
-                Start Learning Free
+                Create an Account
                 <span style={{ fontSize: 18, transition: 'transform 0.2s' }}>→</span>
               </Link>
               <a

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useUsageLimits } from '../hooks/useUsageLimits'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme } from '../hooks/useTheme'
 import { supabase } from '../lib/supabase'
 
 const NAV_LINKS = [
@@ -18,6 +19,7 @@ export default function Navbar() {
   const user = useAuthStore((s) => s.user)
   const { isPro } = useUsageLimits(user?.id ?? '')
   const { isMobile } = useBreakpoint()
+  const { theme, toggleTheme, t } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function Navbar() {
 
   return (
     <nav style={{
-      background: 'rgba(15,23,42,0.95)',
+      background: t.navBg,
       backdropFilter: 'blur(12px)',
       borderBottom: '1px solid rgba(99,102,241,0.2)',
       position: 'sticky',
@@ -65,7 +67,7 @@ export default function Navbar() {
           }}>
             <span style={{ fontSize: 16 }}>⚡</span>
           </div>
-          <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '1.1rem' }}>VocabForge</span>
+          <span style={{ color: t.textPrimary, fontWeight: 700, fontSize: '1.1rem' }}>VocabForge</span>
         </Link>
 
         {isMobile ? (
@@ -82,7 +84,7 @@ export default function Navbar() {
               background: 'transparent',
               border: 'none',
               cursor: 'pointer',
-              color: '#94a3b8',
+              color: t.textSecondary,
               fontSize: '1.25rem',
               padding: '0.25rem',
             }}
@@ -139,11 +141,27 @@ export default function Navbar() {
                     padding: '0.4rem 0.85rem',
                     borderRadius: 8,
                     fontSize: '0.875rem',
-                    color: '#94a3b8',
+                    color: t.textSecondary,
                     textDecoration: 'none',
                   }}>
                     Settings
                   </Link>
+                  <button
+                    onClick={toggleTheme}
+                    aria-label="Toggle theme"
+                    style={{
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: 8,
+                      border: `1px solid ${t.surfaceBorder}`,
+                      background: 'transparent',
+                      color: t.textSecondary,
+                      cursor: 'pointer',
+                      fontSize: '0.875rem',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {theme === 'dark' ? '☀' : '🌙'}
+                  </button>
                   <button
                     onClick={handleSignOut}
                     style={{
@@ -196,7 +214,7 @@ export default function Navbar() {
             top: 60,
             left: 0,
             right: 0,
-            background: 'rgba(15,23,42,0.98)',
+            background: t.navBg,
             backdropFilter: 'blur(16px)',
             borderBottom: '1px solid rgba(99,102,241,0.2)',
             padding: '1rem 1.5rem 1.5rem',
@@ -227,7 +245,7 @@ export default function Navbar() {
                     </Link>
                   )
                 })}
-                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '0.5rem 0' }} />
+                <div style={{ height: 1, background: t.surfaceBorder, margin: '0.5rem 0' }} />
                 <Link to="/billing" style={{
                   padding: '0.75rem 1rem',
                   display: 'block',
@@ -242,11 +260,26 @@ export default function Navbar() {
                   padding: '0.75rem 1rem',
                   display: 'block',
                   fontSize: '0.95rem',
-                  color: '#94a3b8',
+                  color: t.textSecondary,
                   textDecoration: 'none',
                 }}>
                   Settings
                 </Link>
+                <button
+                  onClick={toggleTheme}
+                  style={{
+                    padding: '0.75rem 1rem',
+                    textAlign: 'left',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: 'transparent',
+                    color: t.textSecondary,
+                    cursor: 'pointer',
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  {theme === 'dark' ? '☀ Light Mode' : '🌙 Dark Mode'}
+                </button>
                 <button
                   onClick={handleSignOut}
                   style={{
@@ -255,7 +288,7 @@ export default function Navbar() {
                     borderRadius: 8,
                     border: 'none',
                     background: 'transparent',
-                    color: '#94a3b8',
+                    color: t.textSecondary,
                     cursor: 'pointer',
                     fontSize: '0.95rem',
                   }}

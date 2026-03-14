@@ -1,14 +1,41 @@
 import { Link } from 'react-router-dom'
 import { useBreakpoint } from '../hooks/useBreakpoint'
+import { useTheme } from '../hooks/useTheme'
 
 export default function Footer() {
   const { isMobile } = useBreakpoint()
+  const { t } = useTheme()
   const year = new Date().getFullYear()
+
+  const headingStyle: React.CSSProperties = {
+    color: t.textSecondary,
+    fontSize: '0.7rem',
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    margin: '0 0 0.75rem',
+  }
+
+  const listStyle: React.CSSProperties = {
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  }
+
+  const linkStyle: React.CSSProperties = {
+    color: t.textFaint,
+    fontSize: '0.825rem',
+    textDecoration: 'none',
+    transition: 'color 0.15s',
+  }
 
   return (
     <footer style={{
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      background: 'rgba(15,23,42,0.6)',
+      borderTop: `1px solid ${t.surfaceBorder}`,
+      background: t.bg,
       padding: isMobile ? '2rem 1rem 1.5rem' : '3rem 1.5rem 2rem',
       marginTop: 'auto',
     }}>
@@ -33,9 +60,9 @@ export default function Footer() {
             }}>
               <span style={{ fontSize: 13 }}>⚡</span>
             </div>
-            <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '1rem' }}>VocabForge</span>
+            <span style={{ color: t.textPrimary, fontWeight: 700, fontSize: '1rem' }}>VocabForge</span>
           </div>
-          <p style={{ color: '#475569', fontSize: '0.8rem', lineHeight: 1.6, margin: 0, maxWidth: 220 }}>
+          <p style={{ color: t.textFaint, fontSize: '0.8rem', lineHeight: 1.6, margin: 0, maxWidth: 220 }}>
             Master vocabulary through spaced repetition and AI-generated stories.
           </p>
         </div>
@@ -74,46 +101,21 @@ export default function Footer() {
         maxWidth: 1100,
         margin: '2rem auto 0',
         paddingTop: '1.25rem',
-        borderTop: '1px solid rgba(255,255,255,0.04)',
+        borderTop: `1px solid ${t.surfaceBorder}`,
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
         gap: '0.5rem',
       }}>
-        <span style={{ color: '#374151', fontSize: '0.75rem' }}>
+        <span style={{ color: t.textFaint, fontSize: '0.75rem' }}>
           &copy; {year} VocabForge. All rights reserved.
         </span>
         <div style={{ display: 'flex', gap: '1.25rem' }}>
-          <span style={{ color: '#374151', fontSize: '0.75rem' }}>Privacy</span>
-          <span style={{ color: '#374151', fontSize: '0.75rem' }}>Terms</span>
+          <span style={{ color: t.textFaint, fontSize: '0.75rem' }}>Privacy</span>
+          <span style={{ color: t.textFaint, fontSize: '0.75rem' }}>Terms</span>
         </div>
       </div>
     </footer>
   )
-}
-
-const headingStyle: React.CSSProperties = {
-  color: '#94a3b8',
-  fontSize: '0.7rem',
-  fontWeight: 700,
-  textTransform: 'uppercase',
-  letterSpacing: '0.08em',
-  margin: '0 0 0.75rem',
-}
-
-const listStyle: React.CSSProperties = {
-  listStyle: 'none',
-  margin: 0,
-  padding: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-}
-
-const linkStyle: React.CSSProperties = {
-  color: '#475569',
-  fontSize: '0.825rem',
-  textDecoration: 'none',
-  transition: 'color 0.15s',
 }

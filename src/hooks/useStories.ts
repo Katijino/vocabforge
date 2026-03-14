@@ -1,6 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
 
+export function useDeleteStory() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ storyId, userId }: { storyId: string; userId: string }) => {
+      const { error } = await supabase
+        .from('generated_stories')
+        .delete()
+        .eq('id', storyId)
+        .eq('user_id', userId)
+      if (error) throw error
+    },
+    onSuccess: (_d, { userId }) => {
+      qc.invalidateQueries({ queryKey: ['stories', userId] })
+    },
+  })
+}
+
 export function useStories(userId: string) {
   return useQuery({
     queryKey: ['stories', userId],

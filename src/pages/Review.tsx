@@ -70,7 +70,6 @@ export default function Review() {
   const validNewCards = newCards.filter((c): c is CardWithWord => !!c.words) as CardWithWord[]
   const remainingToLearn = Math.max(0, dailyLimit - learnedToday)
   const learnable = validNewCards.slice(0, remainingToLearn)
-  const title = deck ? `Reviewing: ${deck.name}` : 'Review'
   const isLoading = dueLoading || newLoading
 
   return (

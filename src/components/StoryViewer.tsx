@@ -37,18 +37,12 @@ export default function StoryViewer({ content, vocabWords, onSentenceHover, hove
 
   return (
     <div style={{ position: 'relative' }}>
-      <p style={{
-        color: '#cbd5e1',
-        fontSize: '1.05rem',
-        lineHeight: 1.85,
-        margin: 0,
-        whiteSpace: 'pre-wrap',
-      }}>
+      <div style={{ fontSize: '1.05rem', margin: 0 }}>
         {sentences.map((sentence, sIdx) => {
           const tokens = tokenize(sentence, wordMap)
           const isHovered = hoveredSentenceIdx === sIdx
           return (
-            <span
+            <div
               key={sIdx}
               onMouseEnter={() => onSentenceHover?.(sIdx)}
               onMouseLeave={() => onSentenceHover?.(null)}
@@ -56,8 +50,12 @@ export default function StoryViewer({ content, vocabWords, onSentenceHover, hove
               style={{
                 background: isHovered ? 'rgba(99,102,241,0.08)' : 'transparent',
                 borderRadius: 4,
+                padding: '0.15rem 0.4rem',
+                margin: '0 -0.4rem',
+                lineHeight: 2,
                 transition: 'background 0.15s ease',
                 cursor: onSentenceHover ? 'pointer' : 'default',
+                color: '#cbd5e1',
               }}
             >
               {tokens.map((token, i) => {
@@ -73,23 +71,24 @@ export default function StoryViewer({ content, vocabWords, onSentenceHover, hove
                     }}
                     onMouseLeave={() => setTooltip(null)}
                     style={{
-                      background: 'rgba(99,102,241,0.2)',
-                      borderBottom: '2px solid #6366f1',
-                      borderRadius: '3px 3px 0 0',
-                      color: '#a5b4fc',
-                      cursor: 'help',
+                      background: 'transparent',
+                      color: '#818cf8',
                       fontWeight: 600,
+                      cursor: 'help',
                       padding: '0 1px',
+                      textDecoration: 'underline',
+                      textDecorationStyle: 'dotted',
+                      textDecorationColor: 'rgba(129,140,248,0.5)',
                     }}
                   >
                     {token.text}
                   </mark>
                 )
               })}
-            </span>
+            </div>
           )
         })}
-      </p>
+      </div>
 
       {tooltip && (
         <div style={{

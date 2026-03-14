@@ -301,9 +301,10 @@ The story should be engaging, coherent, and easy for a learner of ${language} to
     const titleMatch = content.match(/^Title:\s*(.+)/m)
     const title = titleMatch ? titleMatch[1].trim() : `${language} Story — ${new Date().toLocaleDateString()}`
 
-    // Translate story body to English
+    // Translate story body and title to English
     const bodyContent = content.replace(/^Title:.*\n?/, '').trim()
     const contentTranslation = await translateToEnglish(bodyContent, language)
+    const titleTranslation = await translateToEnglish(title, language)
     console.log(`[generate-story] Translation: ${contentTranslation ? 'ok' : 'skipped/failed'}`)
 
     // Save story
@@ -312,6 +313,7 @@ The story should be engaging, coherent, and easy for a learner of ${language} to
       .insert({
         user_id: user.id,
         title,
+        title_translation: titleTranslation ?? null,
         content,
         content_translation: contentTranslation ?? null,
         language,

@@ -9,7 +9,6 @@ import { useBreakpoint } from '../hooks/useBreakpoint'
 import { useTheme, fontSerif } from '../hooks/useTheme'
 import UpgradePrompt from '../components/UpgradePrompt'
 import PageHeader from '../components/ui/PageHeader'
-import FadeIn from '../components/ui/FadeIn'
 
 export default function Learn() {
   const { isMobile } = useBreakpoint()

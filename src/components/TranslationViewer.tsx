@@ -7,33 +7,37 @@ function splitSentences(text: string): string[] {
 interface TranslationViewerProps {
   translation: string
   hoveredSentenceIdx?: number | null
+  showAll?: boolean
 }
 
-export default function TranslationViewer({ translation, hoveredSentenceIdx }: TranslationViewerProps) {
+export default function TranslationViewer({ translation, hoveredSentenceIdx, showAll = false }: TranslationViewerProps) {
   const [directHover, setDirectHover] = useState<number | null>(null)
   const sentences = splitSentences(translation)
 
   return (
-    <p style={{ color: '#cbd5e1', fontSize: '1.05rem', lineHeight: 1.85, margin: 0, whiteSpace: 'pre-wrap' }}>
+    <div style={{ fontSize: '1.05rem' }}>
       {sentences.map((sentence, i) => {
-        const revealed = directHover === i || hoveredSentenceIdx === i
+        const revealed = showAll || directHover === i || hoveredSentenceIdx === i
         return (
-          <span
+          <div
             key={i}
             onMouseEnter={() => setDirectHover(i)}
             onMouseLeave={() => setDirectHover(null)}
             onClick={() => setDirectHover(directHover === i ? null : i)}
             style={{
               filter: revealed ? 'none' : 'blur(5px)',
-              transition: 'filter 0.15s ease',
+              transition: 'filter 0.2s ease',
               cursor: 'default',
               userSelect: revealed ? 'text' : 'none',
+              lineHeight: 2,
+              padding: '0.15rem 0.4rem',
+              color: '#94a3b8',
             }}
           >
             {sentence}
-          </span>
+          </div>
         )
       })}
-    </p>
+    </div>
   )
 }

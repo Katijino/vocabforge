@@ -1,7 +1,8 @@
-import { Routes, Route, Link } from 'react-router-dom'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './stores/authStore'
+import { useTheme } from './hooks/useTheme'
 import Navbar from './components/Navbar'
 import Toast from './components/Toast'
 import InstallBanner from './components/InstallBanner'
@@ -17,8 +18,15 @@ import Billing from './pages/Billing'
 import Login from './pages/Login'
 import Decks from './pages/Decks'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }) }, [pathname])
+  return null
+}
+
 function App() {
   const setSession = useAuthStore((s) => s.setSession)
+  const { theme, t } = useTheme()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
@@ -28,8 +36,13 @@ function App() {
     return () => subscription.unsubscribe()
   }, [setSession])
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0f172a' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: t.bg }}>
+      <ScrollToTop />
       <Navbar />
       <Toast />
       <main style={{ flex: 1 }}>
