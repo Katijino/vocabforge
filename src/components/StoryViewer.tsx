@@ -1,22 +1,29 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { Word } from '../types/database'
 
 interface StoryViewerProps {
   content: string
   vocabWords: Word[]
+  onSentenceHover?: (idx: number | null) => void
+  hoveredSentenceIdx?: number | null
 }
 
-export default function StoryViewer({ content, vocabWords }: StoryViewerProps) {
+function splitSentences(text: string): string[] {
+  return text.match(/[^.!?。！？\n]+[.!?。！？\n]*/g) ?? [text]
+}
+
+export default function StoryViewer({ content, vocabWords, onSentenceHover, hoveredSentenceIdx }: StoryViewerProps) {
   const [tooltip, setTooltip] = useState<{ word: Word; x: number; y: number } | null>(null)
 
-  // Build a map of word text -> Word object (case-insensitive)
-  const wordMap = new Map<string, Word>()
-  for (const w of vocabWords) {
-    wordMap.set(w.word.toLowerCase(), w)
-  }
+  const wordMap = useMemo(() => {
+    const wm = new Map<string, Word>()
+    for (const w of vocabWords) {
+      wm.set(w.word.toLowerCase(), w)
+    }
+    return wm
+  }, [vocabWords])
 
-  // Tokenize content and wrap matching words
-  const tokens = tokenize(content, wordMap)
+  const sentences = useMemo(() => splitSentences(content), [content])
 
   return (
     <div style={{ position: 'relative' }}>
@@ -27,30 +34,49 @@ export default function StoryViewer({ content, vocabWords }: StoryViewerProps) {
         margin: 0,
         whiteSpace: 'pre-wrap',
       }}>
-        {tokens.map((token, i) => {
-          if (token.type === 'text') {
-            return <span key={i}>{token.text}</span>
-          }
+        {sentences.map((sentence, sIdx) => {
+          const tokens = tokenize(sentence, wordMap)
+          const isHovered = hoveredSentenceIdx === sIdx
           return (
-            <mark
-              key={i}
-              onMouseEnter={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                setTooltip({ word: token.word!, x: rect.left + rect.width / 2, y: rect.top })
-              }}
-              onMouseLeave={() => setTooltip(null)}
+            <span
+              key={sIdx}
+              onMouseEnter={() => onSentenceHover?.(sIdx)}
+              onMouseLeave={() => onSentenceHover?.(null)}
+              onClick={() => onSentenceHover?.(isHovered ? null : sIdx)}
               style={{
-                background: 'rgba(99,102,241,0.2)',
-                borderBottom: '2px solid #6366f1',
-                borderRadius: '3px 3px 0 0',
-                color: '#a5b4fc',
-                cursor: 'help',
-                fontWeight: 600,
-                padding: '0 1px',
+                background: isHovered ? 'rgba(99,102,241,0.08)' : 'transparent',
+                borderRadius: 4,
+                transition: 'background 0.15s ease',
+                cursor: onSentenceHover ? 'pointer' : 'default',
               }}
             >
-              {token.text}
-            </mark>
+              {tokens.map((token, i) => {
+                if (token.type === 'text') {
+                  return <span key={i}>{token.text}</span>
+                }
+                return (
+                  <mark
+                    key={i}
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect()
+                      setTooltip({ word: token.word!, x: rect.left + rect.width / 2, y: rect.top })
+                    }}
+                    onMouseLeave={() => setTooltip(null)}
+                    style={{
+                      background: 'rgba(99,102,241,0.2)',
+                      borderBottom: '2px solid #6366f1',
+                      borderRadius: '3px 3px 0 0',
+                      color: '#a5b4fc',
+                      cursor: 'help',
+                      fontWeight: 600,
+                      padding: '0 1px',
+                    }}
+                  >
+                    {token.text}
+                  </mark>
+                )
+              })}
+            </span>
           )
         })}
       </p>
@@ -90,6 +116,7 @@ export default function StoryViewer({ content, vocabWords }: StoryViewerProps) {
 
 type Token = { type: 'text'; text: string } | { type: 'vocab'; text: string; word: Word }
 
+/** Splits text into tokens, tagging substrings that match vocab words (longest-match-first). */
 function tokenize(text: string, wordMap: Map<string, Word>): Token[] {
   if (wordMap.size === 0) return [{ type: 'text', text }]
 

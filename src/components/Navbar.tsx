@@ -1,11 +1,11 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useUsageLimits } from '../hooks/useUsageLimits'
 import { supabase } from '../lib/supabase'
 
 const NAV_LINKS = [
-  { path: '/', label: 'Home' },
+  { path: '/', label: 'My Decks' },
   { path: '/learn', label: 'Words' },
-  { path: '/review', label: 'Review' },
   { path: '/stories', label: 'Stories' },
   { path: '/import', label: 'Import' },
 ]
@@ -14,9 +14,11 @@ export default function Navbar() {
   const location = useLocation()
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
+  const { isPro } = useUsageLimits(user?.id ?? '')
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut()
+    if (error) console.error('Sign out error:', error.message)
     navigate('/login')
   }
 
@@ -59,7 +61,9 @@ export default function Navbar() {
         {user && (
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
             {NAV_LINKS.map((link) => {
-              const active = location.pathname === link.path
+              const active = link.path === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(link.path)
               return (
                 <Link
                   key={link.path}
@@ -86,6 +90,19 @@ export default function Navbar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           {user ? (
             <>
+              <Link to="/billing" style={{
+                padding: '0.4rem 0.85rem',
+                borderRadius: 8,
+                fontSize: '0.825rem',
+                fontWeight: 600,
+                color: isPro ? '#a5b4fc' : '#8b5cf6',
+                background: isPro ? 'transparent' : 'rgba(99,102,241,0.1)',
+                border: isPro ? 'none' : '1px solid rgba(99,102,241,0.25)',
+                textDecoration: 'none',
+                transition: 'color 0.15s, background 0.15s',
+              }}>
+                {isPro ? 'Manage Subscription' : 'Subscribe'}
+              </Link>
               <Link to="/settings" style={{
                 padding: '0.4rem 0.85rem',
                 borderRadius: 8,

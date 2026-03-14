@@ -39,19 +39,30 @@ export function useGenerateStory() {
     mutationFn: async ({
       timeWindow,
       language,
+      deckId,
+      wordIds,
     }: {
       userId: string
-      timeWindow: 7 | 14 | 30
+      timeWindow?: 7 | 14 | 30
       language: string
+      deckId?: string | null
+      wordIds?: string[]
     }) => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) throw new Error('Not authenticated')
 
       const res = await supabase.functions.invoke('generate-story', {
-        body: { time_window: timeWindow, language },
+        body: { time_window: timeWindow ?? 7, language, deck_id: deckId ?? null, word_ids: wordIds ?? null },
       })
 
-      if (res.error) throw res.error
+      // Edge function errors come back in res.data when the function returns a non-2xx JSON body
+      if (res.error || (res.data && (res.data as { error?: string }).error)) {
+        const data = res.data as { error?: string; code?: string } | null
+        const message = data?.error ?? res.error?.message ?? 'Failed to generate story'
+        const err = new Error(message) as Error & { code?: string }
+        if (data?.code) err.code = data.code
+        throw err
+      }
       return res.data as { id: string; title: string; content: string; cached: boolean }
     },
     onSuccess: (_d, { userId }) => {

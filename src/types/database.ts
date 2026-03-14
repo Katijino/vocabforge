@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           cache_key: string
           content: string
+          content_translation: string | null
           generated_at: string
           id: string
           language: string
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           cache_key: string
           content: string
+          content_translation?: string | null
           generated_at?: string
           id?: string
           language: string
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           cache_key?: string
           content?: string
+          content_translation?: string | null
           generated_at?: string
           id?: string
           language?: string
@@ -126,6 +129,7 @@ export type Database = {
           id: string
           interval_days: number
           last_reviewed: string | null
+          learned_at: string | null
           repetitions: number
           user_id: string
           word_id: string
@@ -136,6 +140,7 @@ export type Database = {
           id?: string
           interval_days?: number
           last_reviewed?: string | null
+          learned_at?: string | null
           repetitions?: number
           user_id: string
           word_id: string
@@ -146,6 +151,7 @@ export type Database = {
           id?: string
           interval_days?: number
           last_reviewed?: string | null
+          learned_at?: string | null
           repetitions?: number
           user_id?: string
           word_id?: string
@@ -202,6 +208,8 @@ export type Database = {
       word_lists: {
         Row: {
           created_at: string
+          daily_review_limit: number
+          description: string | null
           id: string
           language: string
           name: string
@@ -210,6 +218,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          daily_review_limit?: number
+          description?: string | null
           id?: string
           language?: string
           name: string
@@ -218,6 +228,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          daily_review_limit?: number
+          description?: string | null
           id?: string
           language?: string
           name?: string
@@ -231,6 +243,7 @@ export type Database = {
           created_at: string
           definition: string | null
           example: string | null
+          example_translation: string | null
           id: string
           language: string
           list_id: string | null
@@ -243,6 +256,7 @@ export type Database = {
           created_at?: string
           definition?: string | null
           example?: string | null
+          example_translation?: string | null
           id?: string
           language?: string
           list_id?: string | null
@@ -255,6 +269,7 @@ export type Database = {
           created_at?: string
           definition?: string | null
           example?: string | null
+          example_translation?: string | null
           id?: string
           language?: string
           list_id?: string | null
@@ -278,7 +293,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      delete_all_user_words: { Args: Record<PropertyKey, never>; Returns: undefined }
+      delete_deck_words: { Args: { p_deck_id: string }; Returns: undefined }
+      delete_words: { Args: { word_ids: string[] }; Returns: undefined }
+      get_deck_stats: {
+        Args: { p_deck_id: string }
+        Returns: {
+          due_count: number
+          new_count: number
+        }[]
+      }
+      move_words_to_deck: { Args: { p_word_ids: string[]; p_deck_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

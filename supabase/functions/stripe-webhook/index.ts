@@ -28,21 +28,51 @@ serve(async (req: Request) => {
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.user_id
         if (userId) {
-          await supabase.from('user_settings').update({
+          const { error } = await supabase.from('user_settings').update({
             subscription_tier: 'pro',
             subscription_status: 'active',
           }).eq('user_id', userId)
+          if (error) console.error('Failed to update user_settings for checkout:', error)
         }
+        break
+      }
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const sub = event.data.object as Stripe.Subscription
+        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
+        const status = sub.status // 'active' | 'trialing' | 'past_due' | 'canceled' | 'unpaid' | ...
+
+        let tier: string
+        let subStatus: string
+        if (status === 'active' || status === 'trialing') {
+          tier = 'pro'
+          subStatus = status
+        } else if (status === 'canceled' || status === 'unpaid') {
+          tier = 'free'
+          subStatus = 'canceled'
+        } else {
+          // past_due, incomplete, incomplete_expired, paused
+          tier = 'pro' // keep pro access during past_due grace period
+          subStatus = status
+        }
+
+        const { error } = await supabase.from('user_settings').update({
+          subscription_tier: tier,
+          subscription_status: subStatus,
+        }).eq('stripe_customer_id', customerId)
+        if (error) console.error(`Failed to update user_settings for ${event.type}:`, error)
         break
       }
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription
         const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
-        await supabase.from('user_settings').update({
+        const { error } = await supabase.from('user_settings').update({
           subscription_tier: 'free',
           subscription_status: 'canceled',
         }).eq('stripe_customer_id', customerId)
+        if (error) console.error('Failed to update user_settings for subscription deleted:', error)
         break
       }
 
@@ -50,9 +80,23 @@ serve(async (req: Request) => {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
         if (customerId) {
-          await supabase.from('user_settings').update({
+          const { error } = await supabase.from('user_settings').update({
             subscription_status: 'past_due',
           }).eq('stripe_customer_id', customerId)
+          if (error) console.error('Failed to update user_settings for payment failed:', error)
+        }
+        break
+      }
+
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
+        if (customerId) {
+          const { error } = await supabase.from('user_settings').update({
+            subscription_tier: 'pro',
+            subscription_status: 'active',
+          }).eq('stripe_customer_id', customerId)
+          if (error) console.error('Failed to update user_settings for invoice paid:', error)
         }
         break
       }

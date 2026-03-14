@@ -5,15 +5,19 @@ export default function Toast() {
   const { toasts, removeToast } = useUIStore()
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: '1.5rem',
-      right: '1.5rem',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '0.5rem',
-      zIndex: 9999,
-    }}>
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        bottom: '1.5rem',
+        right: '1.5rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+        zIndex: 9999,
+      }}
+    >
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} onRemove={removeToast} />
       ))}
@@ -36,6 +40,7 @@ function ToastItem({ toast, onRemove }: { toast: { id: string; message: string; 
 
   return (
     <div
+      role={toast.type === 'error' ? 'alert' : 'status'}
       onClick={() => onRemove(toast.id)}
       style={{
         background: c.bg,

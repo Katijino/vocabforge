@@ -10,6 +10,7 @@ export interface SrsState {
   due_date: string
 }
 
+/** Applies an SM-2 grade to the current card state and returns the updated state with new due date. */
 export function applyGrade(current: SrsState, grade: 0 | 2 | 3 | 5): SrsState {
   let { ease_factor, interval_days, repetitions } = current
 
@@ -51,7 +52,7 @@ export function defaultCard(word_id: string, user_id: string) {
     ease_factor: 2.5,
     interval_days: 0,
     repetitions: 0,
-    due_date: todayISO(),
+    due_date: '9999-12-31',
     last_reviewed: null,
   }
 }

@@ -7,8 +7,8 @@ interface UpgradePromptProps {
 
 const MESSAGES = {
   words: {
-    title: 'Word limit reached',
-    body: 'Free plan includes up to 50 words. Upgrade to Pro for unlimited vocabulary.',
+    title: 'Go Pro',
+    body: 'Upgrade to Pro for unlimited AI stories, Duolingo sync, and priority support.',
   },
   stories: {
     title: 'Story limit reached',

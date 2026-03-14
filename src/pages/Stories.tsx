@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useStories, useGenerateStory } from '../hooks/useStories'
+import { useDecks } from '../hooks/useDecks'
 import { useUsageLimits } from '../hooks/useUsageLimits'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { useUIStore } from '../stores/uiStore'
@@ -12,11 +13,13 @@ export default function Stories() {
   const user = useAuthStore((s) => s.user)
   const { data: stories = [], isLoading } = useStories(user?.id ?? '')
   const { data: settings } = useUserSettings(user?.id ?? '')
+  const { data: decks = [] } = useDecks(user?.id ?? '')
   const generateStory = useGenerateStory()
   const limits = useUsageLimits(user?.id ?? '')
   const addToast = useUIStore((s) => s.addToast)
 
   const [timeWindow, setTimeWindow] = useState<7 | 14 | 30>(7)
+  const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null)
   const [showUpgrade, setShowUpgrade] = useState(false)
 
   if (!user) {
@@ -35,6 +38,7 @@ export default function Stories() {
         userId: user.id,
         timeWindow,
         language: settings?.learning_language ?? 'en',
+        deckId: selectedDeckId,
       })
       addToast(result.cached ? 'Loaded cached story' : 'Story generated!', 'success')
     } catch (err) {
@@ -90,6 +94,31 @@ export default function Stories() {
               ))}
             </div>
           </div>
+          {decks.length > 0 && (
+            <div>
+              <label style={{ display: 'block', color: '#64748b', fontSize: '0.75rem', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Deck
+              </label>
+              <select
+                value={selectedDeckId ?? ''}
+                onChange={(e) => setSelectedDeckId(e.target.value || null)}
+                style={{
+                  padding: '0.4rem 0.75rem',
+                  borderRadius: 6,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(15,23,42,0.9)',
+                  color: '#f1f5f9',
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="">All words</option>
+                {decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+              </select>
+            </div>
+          )}
           <button
             onClick={handleGenerate}
             disabled={generateStory.isPending}

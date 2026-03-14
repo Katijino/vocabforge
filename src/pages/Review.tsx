@@ -1,21 +1,34 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
-import { useDueCards } from '../hooks/useWords'
+import { useDueCards, useNewCards, useNewCardsLearnedToday } from '../hooks/useWords'
+import { useDecks } from '../hooks/useDecks'
+import { useUserSettings } from '../hooks/useUserSettings'
 import { supabase } from '../lib/supabase'
 import FlashcardDeck from '../components/FlashcardDeck'
 import type { SrsCard, Word } from '../types/database'
 
 type CardWithWord = SrsCard & { words: Word }
 
-type Phase = 'idle' | 'session' | 'done'
+type Phase = 'idle' | 'learning' | 'reviewing' | 'done'
 
 export default function Review() {
   const user = useAuthStore((s) => s.user)
-  const { data: dueCards = [], isLoading } = useDueCards(user?.id ?? '')
+  const [searchParams] = useSearchParams()
+  const deckId = searchParams.get('deck') ?? undefined
+
+  const { data: decks = [] } = useDecks(user?.id ?? '')
+  const deck = deckId ? decks.find((d) => d.id === deckId) : undefined
+  const { data: settings } = useUserSettings(user?.id ?? '')
+  const dailyLimit = settings?.daily_review_limit ?? 20
+
+  const { data: dueCards = [], isLoading: dueLoading } = useDueCards(user?.id ?? '', deckId)
+  const { data: newCards = [], isLoading: newLoading } = useNewCards(user?.id ?? '', deckId, dailyLimit)
+  const { data: learnedToday = 0 } = useNewCardsLearnedToday(user?.id ?? '')
+
   const [phase, setPhase] = useState<Phase>('idle')
   const [sessionId, setSessionId] = useState('')
-  const [result, setResult] = useState<{ correct: number; total: number } | null>(null)
+  const [result, setResult] = useState<{ correct: number; total: number; mode: 'learn' | 'review' } | null>(null)
 
   if (!user) {
     return (
@@ -26,7 +39,7 @@ export default function Review() {
     )
   }
 
-  const startSession = async () => {
+  const startSession = async (mode: 'learning' | 'reviewing') => {
     const { data, error } = await supabase
       .from('review_sessions')
       .insert({ user_id: user.id })
@@ -34,11 +47,12 @@ export default function Review() {
       .single()
     if (error || !data) return
     setSessionId(data.id)
-    setPhase('session')
+    setPhase(mode)
   }
 
   const handleComplete = async (correct: number, total: number) => {
-    setResult({ correct, total })
+    const mode = phase === 'learning' ? 'learn' : 'review'
+    setResult({ correct, total, mode })
     setPhase('done')
     await supabase
       .from('review_sessions')
@@ -46,66 +60,98 @@ export default function Review() {
       .eq('id', sessionId)
   }
 
-  const validCards = dueCards.filter((c): c is CardWithWord => !!c.words) as CardWithWord[]
+  const validDueCards = dueCards.filter((c): c is CardWithWord => !!c.words) as CardWithWord[]
+  const validNewCards = newCards.filter((c): c is CardWithWord => !!c.words) as CardWithWord[]
+  const remainingToLearn = Math.max(0, dailyLimit - learnedToday)
+  const learnable = validNewCards.slice(0, remainingToLearn)
+  const title = deck ? `Reviewing: ${deck.name}` : 'Review'
+  const isLoading = dueLoading || newLoading
 
   return (
     <div style={{ maxWidth: 700, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Review</h1>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+        <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.875rem' }}>← Decks</Link>
+      </div>
+      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>{title}</h1>
 
       {phase === 'idle' && (
         <>
           {isLoading ? (
             <div style={{ textAlign: 'center', color: '#64748b', padding: '3rem' }}>Loading cards…</div>
-          ) : validCards.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-              <div style={{ fontSize: 64, marginBottom: '1rem' }}>🎉</div>
-              <h2 style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: 8 }}>All caught up!</h2>
-              <p style={{ color: '#64748b', marginBottom: '2rem' }}>No cards due for review right now. Come back later.</p>
-              <Link to="/learn" style={primaryBtn}>Add more words</Link>
-            </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-              <div style={{
-                width: 96,
-                height: 96,
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
-                border: '1px solid rgba(99,102,241,0.3)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 1.5rem',
-                fontSize: 40,
-              }}>
-                🃏
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.5rem' }}>
+              {/* Learn section */}
+              <div style={sectionCard}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: 28 }}>🌱</span>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Learn New Cards</h2>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>
+                      {learnedToday} learned today · {remainingToLearn} remaining of {dailyLimit} daily goal
+                    </p>
+                  </div>
+                </div>
+                {learnable.length === 0 ? (
+                  <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
+                    {validNewCards.length === 0
+                      ? 'No new cards to learn. Import some vocabulary to get started!'
+                      : `Daily goal reached! Come back tomorrow for ${Math.min(validNewCards.length, dailyLimit)} more.`}
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                      {learnable.length} card{learnable.length !== 1 ? 's' : ''} ready
+                    </span>
+                    <button onClick={() => startSession('learning')} style={learnBtn}>
+                      Start Learning
+                    </button>
+                  </div>
+                )}
               </div>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 8 }}>
-                {validCards.length} card{validCards.length !== 1 ? 's' : ''} due
-              </h2>
-              <p style={{ color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                Review these words to keep them fresh in your memory.
-              </p>
-              <button onClick={startSession} style={{
-                padding: '0.85rem 2.5rem',
-                borderRadius: 12,
-                border: 'none',
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '1rem',
-                cursor: 'pointer',
-                boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
-              }}>
-                Start Session
-              </button>
+
+              {/* Review section */}
+              <div style={sectionCard}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: 28 }}>🃏</span>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Review Due Cards</h2>
+                    <p style={{ margin: 0, color: '#64748b', fontSize: '0.8rem' }}>
+                      SRS-scheduled cards that need reinforcement
+                    </p>
+                  </div>
+                </div>
+                {validDueCards.length === 0 ? (
+                  <p style={{ color: '#64748b', fontSize: '0.9rem', margin: 0 }}>
+                    🎉 All caught up! No cards due for review right now.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                      {validDueCards.length} card{validDueCards.length !== 1 ? 's' : ''} due
+                    </span>
+                    <button onClick={() => startSession('reviewing')} style={reviewBtn}>
+                      Start Review
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </>
       )}
 
-      {phase === 'session' && sessionId && (
+      {phase === 'learning' && sessionId && (
         <FlashcardDeck
-          cards={validCards}
+          cards={learnable}
+          userId={user.id}
+          sessionId={sessionId}
+          onComplete={handleComplete}
+        />
+      )}
+
+      {phase === 'reviewing' && sessionId && (
+        <FlashcardDeck
+          cards={validDueCards}
           userId={user.id}
           sessionId={sessionId}
           onComplete={handleComplete}
@@ -117,7 +163,9 @@ export default function Review() {
           <div style={{ fontSize: 64, marginBottom: '1rem' }}>
             {result.correct === result.total ? '🏆' : result.correct >= result.total / 2 ? '👍' : '💪'}
           </div>
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: 8 }}>Session complete!</h2>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: 8 }}>
+            {result.mode === 'learn' ? 'Learning complete!' : 'Session complete!'}
+          </h2>
           <p style={{ color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
             You got <strong style={{ color: '#a5b4fc' }}>{result.correct}</strong> out of{' '}
             <strong style={{ color: '#a5b4fc' }}>{result.total}</strong> correct (
@@ -137,7 +185,7 @@ export default function Review() {
                 fontSize: '0.95rem',
               }}
             >
-              Review Again
+              Back to Overview
             </button>
             <Link to="/" style={{
               padding: '0.75rem 2rem',
@@ -148,7 +196,7 @@ export default function Review() {
               fontWeight: 600,
               fontSize: '0.95rem',
             }}>
-              Back to Home
+              Back to Decks
             </Link>
           </div>
         </div>
@@ -173,5 +221,34 @@ const primaryBtn: React.CSSProperties = {
   color: '#fff',
   fontWeight: 600,
   textDecoration: 'none',
+  fontSize: '0.9rem',
+}
+
+const sectionCard: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.02)',
+  border: '1px solid rgba(255,255,255,0.06)',
+  borderRadius: 16,
+  padding: '1.5rem',
+}
+
+const learnBtn: React.CSSProperties = {
+  padding: '0.6rem 1.5rem',
+  borderRadius: 10,
+  border: 'none',
+  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+  color: '#fff',
+  fontWeight: 700,
+  cursor: 'pointer',
+  fontSize: '0.9rem',
+}
+
+const reviewBtn: React.CSSProperties = {
+  padding: '0.6rem 1.5rem',
+  borderRadius: 10,
+  border: 'none',
+  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+  color: '#fff',
+  fontWeight: 700,
+  cursor: 'pointer',
   fontSize: '0.9rem',
 }

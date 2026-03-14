@@ -24,6 +24,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
+  // Only handle http/https — ignore chrome-extension:// and other schemes
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return
+  }
+
   // Pass through Supabase API calls
   if (url.hostname.includes('supabase.co')) {
     return

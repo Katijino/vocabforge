@@ -4,10 +4,22 @@ import { useAuthStore } from '../stores/authStore'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { supabase } from '../lib/supabase'
 
+function isValidRedirectUrl(url: unknown): url is string {
+  if (typeof url !== 'string') return false
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.stripe.com')
+  } catch {
+    return false
+  }
+}
+
 export default function Billing() {
   const user = useAuthStore((s) => s.user)
   const { data: settings } = useUserSettings(user?.id ?? '')
   const [loading, setLoading] = useState(false)
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [syncLoading, setSyncLoading] = useState(false)
   const [error, setError] = useState('')
 
   const isPro = settings?.subscription_tier === 'pro'
@@ -20,11 +32,46 @@ export default function Billing() {
       const res = await supabase.functions.invoke('create-checkout')
       if (res.error) throw res.error
       const { url } = res.data as { url: string }
+      if (!isValidRedirectUrl(url)) throw new Error('Invalid checkout URL received')
       window.location.href = url
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to start checkout')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleManageSubscription = async () => {
+    if (!user) return
+    setPortalLoading(true)
+    setError('')
+    try {
+      const res = await supabase.functions.invoke('create-portal-session')
+      if (res.error) throw res.error
+      const { url } = res.data as { url: string }
+      if (!isValidRedirectUrl(url)) throw new Error('Invalid portal URL received')
+      window.location.href = url
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to open billing portal')
+    } finally {
+      setPortalLoading(false)
+    }
+  }
+
+  const handleSyncSubscription = async () => {
+    if (!user) return
+    setSyncLoading(true)
+    setError('')
+    try {
+      const res = await supabase.functions.invoke('sync-subscription')
+      if (res.error) throw new Error(res.error.message ?? 'Edge function request failed')
+      const data = res.data as { synced?: boolean; error?: string }
+      if (data.error) throw new Error(data.error)
+      // Refetch settings by reloading
+      window.location.reload()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to sync subscription')
+      setSyncLoading(false)
     }
   }
 
@@ -95,7 +142,7 @@ export default function Billing() {
           <div style={{ marginBottom: '1rem' }}>
             <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 4 }}>Pro</div>
             <div style={{ fontSize: '2rem', fontWeight: 800, color: '#f1f5f9', lineHeight: 1 }}>$10</div>
-            <div style={{ color: '#4ade80', fontSize: '0.8rem', marginTop: 4, fontWeight: 600 }}>30-day free trial, then $10/mo</div>
+            <div style={{ color: '#4ade80', fontSize: '0.8rem', marginTop: 4, fontWeight: 600 }}>7-day free trial, then $10/mo</div>
           </div>
           <ul style={featureList}>
             <li style={featureItem}><span style={{ color: '#6366f1' }}>✓</span> <strong>Unlimited</strong> vocabulary words</li>
@@ -146,13 +193,55 @@ export default function Billing() {
             Manage Subscription
           </h3>
           <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
-            To cancel your subscription, contact us or manage via the Stripe Customer Portal.
+            Update your payment method, change plans, or cancel your subscription.
           </p>
-          <p style={{ color: '#475569', fontSize: '0.8rem', margin: 0 }}>
+          <button
+            onClick={handleManageSubscription}
+            disabled={portalLoading}
+            style={{
+              padding: '0.65rem 1.5rem',
+              borderRadius: 10,
+              border: '1px solid rgba(99,102,241,0.3)',
+              background: portalLoading ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)',
+              color: '#a5b4fc',
+              fontWeight: 600,
+              cursor: portalLoading ? 'not-allowed' : 'pointer',
+              fontSize: '0.875rem',
+            }}
+          >
+            {portalLoading ? 'Redirecting…' : 'Manage Subscription →'}
+          </button>
+          <p style={{ color: '#475569', fontSize: '0.8rem', margin: '1rem 0 0' }}>
             Questions? Email <span style={{ color: '#6366f1' }}>support@vocabforge.app</span>
           </p>
         </div>
       )}
+
+      {/* Sync subscription — useful if webhook events were missed */}
+      <div style={{ ...cardStyle, marginTop: '2rem' }}>
+        <h3 style={{ margin: '0 0 0.5rem', fontSize: '0.95rem', fontWeight: 600, color: '#94a3b8' }}>
+          Subscription not reflecting correctly?
+        </h3>
+        <p style={{ color: '#64748b', fontSize: '0.875rem', margin: '0 0 1rem', lineHeight: 1.5 }}>
+          If your subscription status seems out of date, sync it with Stripe.
+        </p>
+        <button
+          onClick={handleSyncSubscription}
+          disabled={syncLoading}
+          style={{
+            padding: '0.65rem 1.5rem',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: syncLoading ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.03)',
+            color: '#94a3b8',
+            fontWeight: 600,
+            cursor: syncLoading ? 'not-allowed' : 'pointer',
+            fontSize: '0.875rem',
+          }}
+        >
+          {syncLoading ? 'Syncing…' : 'Sync Subscription'}
+        </button>
+      </div>
     </div>
   )
 }

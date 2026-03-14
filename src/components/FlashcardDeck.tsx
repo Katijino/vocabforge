@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import WordCard from './WordCard'
 import { applyGrade } from '../lib/sm2'
 import { useGradeCard } from '../hooks/useWords'
@@ -24,40 +24,48 @@ export default function FlashcardDeck({ cards, userId, sessionId, onComplete }: 
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [correct, setCorrect] = useState(0)
+  const gradingRef = useRef(false)
   const gradeCard = useGradeCard()
 
   const card = cards[index]
   const total = cards.length
 
   const handleGrade = async (grade: 0 | 2 | 3 | 5) => {
-    if (!card) return
-    const newState = applyGrade(
-      {
-        ease_factor: card.ease_factor,
-        interval_days: card.interval_days,
-        repetitions: card.repetitions,
-        due_date: card.due_date,
-      },
-      grade
-    )
+    if (!card || gradingRef.current) return
+    gradingRef.current = true
+    try {
+      const newState = applyGrade(
+        {
+          ease_factor: card.ease_factor,
+          interval_days: card.interval_days,
+          repetitions: card.repetitions,
+          due_date: card.due_date,
+        },
+        grade
+      )
 
-    await gradeCard.mutateAsync({
-      cardId: card.id,
-      userId,
-      wordId: card.word_id,
-      sessionId,
-      grade,
-      newState,
-    })
+      const isFirstLearn = card.repetitions === 0 && grade >= 3
+      await gradeCard.mutateAsync({
+        cardId: card.id,
+        userId,
+        wordId: card.word_id,
+        sessionId,
+        grade,
+        newState,
+        learnedAt: isFirstLearn ? new Date().toISOString() : undefined,
+      })
 
-    if (grade >= 3) setCorrect((c) => c + 1)
+      if (grade >= 3) setCorrect((c) => c + 1)
 
-    const next = index + 1
-    if (next >= total) {
-      onComplete(grade >= 3 ? correct + 1 : correct, total)
-    } else {
-      setFlipped(false)
-      setTimeout(() => setIndex(next), 50)
+      const next = index + 1
+      if (next >= total) {
+        onComplete(grade >= 3 ? correct + 1 : correct, total)
+      } else {
+        setFlipped(false)
+        setTimeout(() => setIndex(next), 50)
+      }
+    } finally {
+      gradingRef.current = false
     }
   }
 

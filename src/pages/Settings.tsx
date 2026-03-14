@@ -94,7 +94,7 @@ export default function Settings() {
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={labelStyle}>Story time window (days)</label>
             <p style={{ color: '#64748b', fontSize: '0.8rem', margin: '0 0 0.5rem', lineHeight: 1.5 }}>
-              Words added within this many days will be included in generated stories.
+              Words learned within this many days will be included in generated stories.
             </p>
             <select {...register('review_time_window', { valueAsNumber: true })} style={selectStyle}>
               {[7, 14, 30].map((n) => (
@@ -104,9 +104,9 @@ export default function Settings() {
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={labelStyle}>Daily review limit</label>
+            <label style={labelStyle}>New cards per day</label>
             <p style={{ color: '#64748b', fontSize: '0.8rem', margin: '0 0 0.5rem', lineHeight: 1.5 }}>
-              Maximum cards shown per review session.
+              New vocabulary cards to introduce each day. Cards you've already learned will always show up for review when due.
             </p>
             <input
               type="number"

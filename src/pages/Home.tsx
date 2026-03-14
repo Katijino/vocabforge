@@ -1,264 +1,440 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useDecks, useCreateDeck, useUpdateDeck, useDeleteDeck, useDeckStats } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
-import { useDueCards, useAddWord } from '../hooks/useWords'
-import { useStories } from '../hooks/useStories'
-import { useUsageLimits } from '../hooks/useUsageLimits'
-import UsageMeter from '../components/UsageMeter'
+import { useGenerateStory } from '../hooks/useStories'
+import { useUIStore } from '../stores/uiStore'
+import { supabase } from '../lib/supabase'
+import type { WordList } from '../types/database'
+import LandingPage from '../components/landing/LandingPage'
+
+// ─── Deck card ────────────────────────────────────────────────────────────────
+
+interface DeckCardProps {
+  deck: WordList
+  userId: string
+  language: string
+  onEdit: (deck: WordList) => void
+  onDelete: (deck: WordList) => void
+}
+
+function DeckCard({ deck, userId, language, onEdit, onDelete }: DeckCardProps) {
+  const { data: stats } = useDeckStats(deck.id)
+  const generateStory = useGenerateStory()
+  const addToast = useUIStore((s) => s.addToast)
+  const navigate = useNavigate()
+  const [generatingStory, setGeneratingStory] = useState(false)
+
+  const dueCount = stats?.due_count ?? 0
+  const newCount = stats?.new_count ?? 0
+  const totalReady = dueCount + newCount
+
+  const handleStory = async () => {
+    setGeneratingStory(true)
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      const { data: logs } = await supabase
+        .from('review_logs')
+        .select('word_id, words!inner(list_id)')
+        .eq('user_id', userId)
+        .gte('reviewed_at', `${today}T00:00:00`)
+
+      type LogRow = { word_id: string; words: { list_id: string | null } | null }
+      const wordIds = [
+        ...new Set(
+          ((logs ?? []) as LogRow[])
+            .filter((l) => l.words?.list_id === deck.id)
+            .map((l) => l.word_id)
+        ),
+      ]
+
+      if (wordIds.length === 0) {
+        addToast('Review some cards first to generate a story', 'info')
+        return
+      }
+
+      const result = await generateStory.mutateAsync({ userId, wordIds, language, deckId: deck.id })
+      navigate(`/stories/${result.id}`)
+    } catch (e) {
+      addToast(e instanceof Error ? e.message : 'Failed to generate story', 'error')
+    } finally {
+      setGeneratingStory(false)
+    }
+  }
+
+  return (
+    <div style={deckCardStyle}>
+      {/* Header */}
+      <div style={{ marginBottom: '1rem' }}>
+        <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
+          {deck.name}
+        </h3>
+        {deck.description && (
+          <p style={{ margin: 0, color: '#64748b', fontSize: '0.825rem', lineHeight: 1.4 }}>
+            {deck.description}
+          </p>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem' }}>
+        <div style={statBadge(dueCount > 0 ? 'due' : 'empty')}>
+          <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{dueCount}</span>
+          <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>due</span>
+        </div>
+        <div style={statBadge(newCount > 0 ? 'new' : 'empty')}>
+          <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>{newCount}</span>
+          <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>new</span>
+        </div>
+      </div>
+
+      {/* Cards due today */}
+      <div style={{
+        fontSize: '0.875rem',
+        fontWeight: 600,
+        color: totalReady > 0 ? '#a5b4fc' : '#475569',
+        marginBottom: '1.25rem',
+      }}>
+        Cards due today: {totalReady}
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <Link
+          to={totalReady > 0 ? `/review?deck=${deck.id}` : '#'}
+          onClick={(e) => totalReady === 0 && e.preventDefault()}
+          style={{
+            ...actionBtn,
+            background: totalReady > 0 ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'rgba(255,255,255,0.04)',
+            color: totalReady > 0 ? '#fff' : '#475569',
+            cursor: totalReady > 0 ? 'pointer' : 'default',
+            boxShadow: totalReady > 0 ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+          }}
+        >
+          Review {totalReady > 0 ? `(${totalReady})` : ''}
+        </Link>
+        <button
+          onClick={handleStory}
+          disabled={generatingStory}
+          style={{
+            ...actionBtn,
+            border: '1px solid rgba(139,92,246,0.3)',
+            color: '#a78bfa',
+            cursor: generatingStory ? 'wait' : 'pointer',
+            opacity: generatingStory ? 0.6 : 1,
+          }}
+        >
+          {generatingStory ? 'Generating…' : 'Story'}
+        </button>
+        <button onClick={() => onEdit(deck)} style={{ ...iconBtn }}>✏️</button>
+        <button onClick={() => onDelete(deck)} style={{ ...iconBtn }}>🗑️</button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Add deck card ────────────────────────────────────────────────────────────
+
+function AddDeckCard({ onAdd }: { onAdd: () => void }) {
+  return (
+    <button onClick={onAdd} style={{
+      ...deckCardStyle,
+      border: '2px dashed rgba(99,102,241,0.25)',
+      background: 'rgba(99,102,241,0.03)',
+      cursor: 'pointer',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '0.5rem',
+      minHeight: 180,
+      width: '100%',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        width: 48,
+        height: 48,
+        borderRadius: '50%',
+        background: 'rgba(99,102,241,0.12)',
+        border: '1px solid rgba(99,102,241,0.2)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 24,
+      }}>+</div>
+      <span style={{ color: '#6366f1', fontWeight: 600, fontSize: '0.95rem' }}>Add Deck</span>
+    </button>
+  )
+}
+
+// ─── Edit/Create modal ─────────────────────────────────────────────────────────
+
+interface DeckModalProps {
+  deck: Partial<WordList> | null
+  onSave: (name: string, description: string) => void
+  onClose: () => void
+}
+
+function DeckModal({ deck, onSave, onClose }: DeckModalProps) {
+  const [name, setName] = useState(deck?.name ?? '')
+  const [desc, setDesc] = useState(deck?.description ?? '')
+  const isNew = !deck?.id
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '1rem',
+    }} onClick={onClose}>
+      <div style={{
+        background: '#1e293b', border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 16, padding: '1.5rem', width: '100%', maxWidth: 420,
+      }} onClick={(e) => e.stopPropagation()}>
+        <h2 style={{ margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9' }}>
+          {isNew ? 'New Deck' : 'Edit Deck'}
+        </h2>
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={labelStyle}>Deck name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Core Vocabulary"
+            autoFocus
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={labelStyle}>Description (optional)</label>
+          <input
+            value={desc}
+            onChange={(e) => setDesc(e.target.value)}
+            placeholder="e.g. N5 vocabulary list"
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            onClick={() => name.trim() && onSave(name.trim(), desc.trim())}
+            disabled={!name.trim()}
+            style={{
+              flex: 1,
+              padding: '0.65rem',
+              borderRadius: 8,
+              border: 'none',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff',
+              fontWeight: 700,
+              cursor: name.trim() ? 'pointer' : 'not-allowed',
+              opacity: name.trim() ? 1 : 0.5,
+              fontSize: '0.9rem',
+            }}
+          >
+            {isNew ? 'Create' : 'Save'}
+          </button>
+          <button onClick={onClose} style={{
+            padding: '0.65rem 1.25rem',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'transparent',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+          }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Home() {
   const user = useAuthStore((s) => s.user)
   const { data: settings } = useUserSettings(user?.id ?? '')
-  const { data: dueCards = [] } = useDueCards(user?.id ?? '')
-  const { data: stories = [] } = useStories(user?.id ?? '')
-  const limits = useUsageLimits(user?.id ?? '')
+  const { data: decks = [] } = useDecks(user?.id ?? '')
+  const createDeck = useCreateDeck()
+  const updateDeck = useUpdateDeck()
+  const deleteDeck = useDeleteDeck()
+  const addToast = useUIStore((s) => s.addToast)
 
-  if (!user) {
-    return (
-      <div style={{
-        minHeight: 'calc(100vh - 60px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '2rem',
-        padding: '2rem',
-        background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
-      }}>
-        <div style={{ textAlign: 'center', maxWidth: 560 }}>
-          <div style={{ fontSize: 64, marginBottom: '1rem' }}>⚡</div>
-          <h1 style={{ fontSize: '3rem', fontWeight: 800, color: '#f1f5f9', margin: '0 0 1rem', lineHeight: 1.1 }}>
-            Learn vocabulary<br />
-            <span style={{
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
-              through stories
-            </span>
-          </h1>
-          <p style={{ color: '#64748b', fontSize: '1.1rem', lineHeight: 1.7, margin: '0 0 2.5rem' }}>
-            Import words from Anki, Duolingo, or CSV — then let AI weave them into engaging stories with built-in spaced repetition flashcards.
+  const [editingDeck, setEditingDeck] = useState<Partial<WordList> | null>(null)
+  const [showModal, setShowModal] = useState(false)
+
+  if (!user) return <LandingPage />
+
+  const language = settings?.learning_language ?? 'en'
+  const username = user.email?.split('@')[0] ?? 'there'
+
+  const openCreate = () => {
+    setEditingDeck(null)
+    setShowModal(true)
+  }
+
+  const openEdit = (deck: WordList) => {
+    setEditingDeck(deck)
+    setShowModal(true)
+  }
+
+  const handleSave = async (name: string, description: string) => {
+    try {
+      if (editingDeck?.id) {
+        await updateDeck.mutateAsync({ deckId: editingDeck.id, userId: user.id, updates: { name, description } })
+        addToast('Deck updated', 'success')
+      } else {
+        await createDeck.mutateAsync({ user_id: user.id, name, description, language })
+        addToast('Deck created', 'success')
+      }
+    } catch {
+      addToast('Something went wrong', 'error')
+    }
+    setShowModal(false)
+  }
+
+  const handleDelete = async (deck: WordList) => {
+    if (!confirm(`Delete "${deck.name}"? Words will be unassigned but not deleted.`)) return
+    try {
+      await deleteDeck.mutateAsync({ deckId: deck.id, userId: user.id })
+      addToast('Deck deleted', 'success')
+    } catch {
+      addToast('Failed to delete deck', 'error')
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
+      {showModal && (
+        <DeckModal
+          deck={editingDeck}
+          onSave={handleSave}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <div>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.2rem' }}>My Decks</h1>
+          <p style={{ color: '#64748b', margin: 0, fontSize: '0.9rem' }}>
+            Hi {username} · {language !== 'en' ? `Learning: ${language}` : 'Set your language in Settings'}
           </p>
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/login" style={{
-              padding: '0.85rem 2rem',
-              borderRadius: 12,
+        </div>
+      </div>
+
+      {decks.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+          <div style={{ fontSize: 56, marginBottom: '1rem' }}>📚</div>
+          <h2 style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: 8 }}>No decks yet</h2>
+          <p style={{ color: '#64748b', marginBottom: '2rem', fontSize: '0.95rem' }}>
+            Create a deck to start organizing your vocabulary.
+          </p>
+          <button
+            onClick={openCreate}
+            style={{
+              padding: '0.8rem 2rem',
+              borderRadius: 10,
+              border: 'none',
               background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
               color: '#fff',
-              textDecoration: 'none',
               fontWeight: 700,
-              fontSize: '1rem',
-              boxShadow: '0 8px 24px rgba(99,102,241,0.4)',
-            }}>
-              Get Started Free
-            </Link>
-            <Link to="/billing" style={{
-              padding: '0.85rem 2rem',
-              borderRadius: 12,
-              border: '1px solid rgba(99,102,241,0.3)',
-              color: '#a5b4fc',
-              textDecoration: 'none',
-              fontWeight: 600,
-              fontSize: '1rem',
-            }}>
-              View Plans
-            </Link>
-          </div>
+              cursor: 'pointer',
+              fontSize: '0.95rem',
+            }}
+          >
+            Create Your First Deck
+          </button>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', maxWidth: 800, width: '100%' }}>
-          {[
-            { icon: '📖', title: 'AI Stories', desc: 'Gemini generates natural stories using your vocab words' },
-            { icon: '🃏', title: 'SRS Flashcards', desc: 'SM-2 spaced repetition keeps words fresh' },
-            { icon: '📥', title: 'Easy Import', desc: 'CSV, Anki .txt/.apkg, Duolingo sync' },
-            { icon: '📱', title: 'PWA Ready', desc: 'Install on iOS and Android like a native app' },
-          ].map((f) => (
-            <div key={f.title} style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              borderRadius: 14,
-              padding: '1.25rem',
-            }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{f.icon}</div>
-              <div style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 4 }}>{f.title}</div>
-              <div style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.5 }}>{f.desc}</div>
-            </div>
+      ) : (
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '1rem',
+        }}>
+          {decks.map((deck) => (
+            <DeckCard
+              key={deck.id}
+              deck={deck}
+              userId={user.id}
+              language={language}
+              onEdit={openEdit}
+              onDelete={handleDelete}
+            />
           ))}
-        </div>
-      </div>
-    )
-  }
-
-  const latestStory = stories[0]
-
-  return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.25rem' }}>
-        Welcome back
-      </h1>
-      <p style={{ color: '#64748b', margin: '0 0 2rem', fontSize: '0.95rem' }}>
-        {settings?.learning_language ? `Learning: ${settings.learning_language}` : 'Set your learning language in Settings'}
-      </p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <span style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Due for Review</span>
-            <span style={{ fontSize: 20 }}>🃏</span>
-          </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: dueCards.length > 0 ? '#a5b4fc' : '#4b5563', lineHeight: 1 }}>
-            {dueCards.length}
-          </div>
-          <div style={{ color: '#64748b', fontSize: '0.875rem', marginTop: 8 }}>cards ready</div>
-          {dueCards.length > 0 && (
-            <Link to="/review" style={{
-              display: 'inline-block',
-              marginTop: '1rem',
-              padding: '0.5rem 1.25rem',
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-            }}>
-              Start Review →
-            </Link>
-          )}
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <span style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Vocabulary</span>
-            <span style={{ fontSize: 20 }}>📚</span>
-          </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#a5b4fc', lineHeight: 1 }}>
-            {settings?.words_count ?? 0}
-          </div>
-          <div style={{ color: '#64748b', fontSize: '0.875rem', marginTop: 8 }}>words total</div>
-          {!limits.isPro && (
-            <div style={{ marginTop: '1rem' }}>
-              <UsageMeter used={limits.wordsCount} limit={limits.FREE_WORD_LIMIT} label="Word limit" />
-            </div>
-          )}
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <span style={{ color: '#94a3b8', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Stories</span>
-            <span style={{ fontSize: 20 }}>✨</span>
-          </div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#a5b4fc', lineHeight: 1 }}>
-            {stories.length}
-          </div>
-          <div style={{ color: '#64748b', fontSize: '0.875rem', marginTop: 8 }}>generated</div>
-          {!limits.isPro && (
-            <div style={{ marginTop: '1rem' }}>
-              <UsageMeter used={limits.storiesUsed} limit={limits.FREE_STORY_LIMIT} label="This month" />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <QuickAddWord userId={user.id} language={settings?.learning_language ?? 'en'} />
-
-      {latestStory && (
-        <div style={{ marginTop: '2rem' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#94a3b8', marginBottom: '0.75rem' }}>
-            Latest Story
-          </h2>
-          <Link to={`/stories/${latestStory.id}`} style={{ textDecoration: 'none' }}>
-            <div style={{ ...cardStyle, cursor: 'pointer', transition: 'border-color 0.2s' }}>
-              <div style={{ color: '#a5b4fc', fontWeight: 600, marginBottom: 8 }}>{latestStory.title}</div>
-              <p style={{
-                color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6, margin: 0,
-                overflow: 'hidden', textOverflow: 'ellipsis',
-                display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
-              }}>
-                {latestStory.content.replace(/^Title:.*\n?/, '')}
-              </p>
-              <div style={{ color: '#6366f1', fontSize: '0.825rem', marginTop: 8 }}>Read story →</div>
-            </div>
-          </Link>
+          <AddDeckCard onAdd={openCreate} />
         </div>
       )}
     </div>
   )
 }
 
-function QuickAddWord({ userId, language }: { userId: string; language: string }) {
-  const addWord = useAddWord()
-  const limits = useUsageLimits(userId)
-  const [word, setWord] = useState('')
-  const [def, setDef] = useState('')
+// ─── Styles ────────────────────────────────────────────────────────────────────
 
-  const handleAdd = async () => {
-    if (!word.trim() || !def.trim()) return
-    if (!limits.canAddWord) return
-    await addWord.mutateAsync({ user_id: userId, word: word.trim(), definition: def.trim(), language })
-    setWord('')
-    setDef('')
-  }
-
-  return (
-    <div style={cardStyle}>
-      <h3 style={{ margin: '0 0 1rem', fontSize: '0.95rem', fontWeight: 600, color: '#94a3b8' }}>
-        Quick Add Word
-      </h3>
-      {!limits.canAddWord && (
-        <p style={{ color: '#fca5a5', fontSize: '0.875rem', margin: '0 0 0.75rem' }}>
-          Word limit reached. <Link to="/billing" style={{ color: '#a5b4fc' }}>Upgrade to Pro</Link> for unlimited words.
-        </p>
-      )}
-      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-        <input
-          value={word}
-          onChange={(e) => setWord(e.target.value)}
-          placeholder="Word"
-          disabled={!limits.canAddWord}
-          style={{ ...inputStyle, flex: '1 1 120px' }}
-        />
-        <input
-          value={def}
-          onChange={(e) => setDef(e.target.value)}
-          placeholder="Definition"
-          disabled={!limits.canAddWord}
-          style={{ ...inputStyle, flex: '2 1 200px' }}
-          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-        />
-        <button
-          onClick={handleAdd}
-          disabled={addWord.isPending || !word.trim() || !def.trim() || !limits.canAddWord}
-          style={{
-            padding: '0.65rem 1.25rem',
-            borderRadius: 8,
-            border: 'none',
-            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-            color: '#fff',
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            opacity: (addWord.isPending || !limits.canAddWord) ? 0.5 : 1,
-          }}
-        >
-          Add
-        </button>
-      </div>
-    </div>
-  )
-}
-
-const cardStyle: React.CSSProperties = {
+const deckCardStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.02)',
-  border: '1px solid rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.07)',
   borderRadius: 16,
   padding: '1.5rem',
 }
 
+function statBadge(type: 'due' | 'new' | 'empty'): React.CSSProperties {
+  const colors: Record<string, { bg: string; color: string }> = {
+    due: { bg: 'rgba(99,102,241,0.15)', color: '#a5b4fc' },
+    new: { bg: 'rgba(34,197,94,0.12)', color: '#4ade80' },
+    empty: { bg: 'rgba(255,255,255,0.03)', color: '#374151' },
+  }
+  const c = colors[type]
+  return {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    padding: '0.4rem 0.85rem',
+    borderRadius: 8,
+    background: c.bg,
+    color: c.color,
+    minWidth: 52,
+    gap: 2,
+  }
+}
+
+const actionBtn: React.CSSProperties = {
+  padding: '0.4rem 0.85rem',
+  borderRadius: 7,
+  border: 'none',
+  background: 'transparent',
+  fontSize: '0.825rem',
+  fontWeight: 600,
+  textDecoration: 'none',
+  display: 'inline-flex',
+  alignItems: 'center',
+  fontFamily: 'inherit',
+}
+
+const iconBtn: React.CSSProperties = {
+  padding: '0.4rem 0.5rem',
+  borderRadius: 7,
+  border: '1px solid rgba(255,255,255,0.07)',
+  background: 'transparent',
+  cursor: 'pointer',
+  fontSize: '0.875rem',
+  lineHeight: 1,
+  fontFamily: 'inherit',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: '0.75rem',
+  fontWeight: 600,
+  color: '#64748b',
+  marginBottom: '0.3rem',
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+}
+
 const inputStyle: React.CSSProperties = {
-  padding: '0.65rem 0.85rem',
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '0.6rem 0.85rem',
   borderRadius: 8,
   border: '1px solid rgba(255,255,255,0.08)',
   background: 'rgba(255,255,255,0.04)',

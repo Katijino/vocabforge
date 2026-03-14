@@ -1,10 +1,11 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
 import { useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { useAuthStore } from './stores/authStore'
 import Navbar from './components/Navbar'
 import Toast from './components/Toast'
 import InstallBanner from './components/InstallBanner'
+import Footer from './components/Footer'
 import Home from './pages/Home'
 import Learn from './pages/Learn'
 import Review from './pages/Review'
@@ -14,6 +15,7 @@ import Import from './pages/Import'
 import Settings from './pages/Settings'
 import Billing from './pages/Billing'
 import Login from './pages/Login'
+import Decks from './pages/Decks'
 
 function App() {
   const setSession = useAuthStore((s) => s.setSession)
@@ -40,9 +42,18 @@ function App() {
           <Route path="/import"         element={<Import />} />
           <Route path="/settings"       element={<Settings />} />
           <Route path="/billing"        element={<Billing />} />
+          <Route path="/decks"          element={<Decks />} />
           <Route path="/login"          element={<Login />} />
+          <Route path="*" element={
+            <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: '#f1f5f9' }}>
+              <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>Page not found</h1>
+              <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>The page you're looking for doesn't exist.</p>
+              <Link to="/" style={{ color: '#a5b4fc', textDecoration: 'underline' }}>Go home</Link>
+            </div>
+          } />
         </Routes>
       </main>
+      <Footer />
       <InstallBanner />
     </div>
   )
