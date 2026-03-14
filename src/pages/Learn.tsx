@@ -5,9 +5,11 @@ import { useWords, useAddWord, useDeleteWord, useBulkDeleteWords, useDeleteAllWo
 import { useDecks, useMoveWordsToDeck } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { useUIStore } from '../stores/uiStore'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import UpgradePrompt from '../components/UpgradePrompt'
 
 export default function Learn() {
+  const { isMobile } = useBreakpoint()
   const user = useAuthStore((s) => s.user)
   const [searchParams, setSearchParams] = useSearchParams()
   const deckFilter = searchParams.get('deck')
@@ -155,7 +157,7 @@ export default function Learn() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
       {showUpgrade && <UpgradePrompt reason="words" onClose={() => setShowUpgrade(false)} />}
 
       {/* Bulk delete confirm modal */}
@@ -263,7 +265,7 @@ export default function Learn() {
         <h3 style={{ margin: '0 0 1rem', fontSize: '0.95rem', fontWeight: 600, color: '#94a3b8' }}>
           Add a word{activeDeck ? ` to ${activeDeck.name}` : ''}
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr auto', gap: '0.75rem', alignItems: 'end' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 2fr 1fr auto', gap: '0.75rem', alignItems: 'end' }}>
           <div>
             <label style={labelStyle}>Word *</label>
             <input value={newWord} onChange={(e) => setNewWord(e.target.value)} placeholder="e.g. 渋滞" style={inputStyle} />
@@ -276,22 +278,45 @@ export default function Learn() {
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             />
           </div>
-          <div>
-            <label style={labelStyle}>Reading</label>
-            <input value={newReading} onChange={(e) => setNewReading(e.target.value)} placeholder="e.g. じゅうたい" style={inputStyle} />
-          </div>
-          <button
-            onClick={handleAdd}
-            disabled={addWord.isPending || !newWord.trim() || !newDef.trim()}
-            style={{
-              padding: '0.65rem 1.25rem', borderRadius: 8, border: 'none',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem',
-              opacity: addWord.isPending ? 0.6 : 1, whiteSpace: 'nowrap',
-            }}
-          >
-            {addWord.isPending ? '…' : '+ Add'}
-          </button>
+          {isMobile ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.75rem', alignItems: 'end', gridColumn: '1 / -1' }}>
+              <div>
+                <label style={labelStyle}>Reading</label>
+                <input value={newReading} onChange={(e) => setNewReading(e.target.value)} placeholder="e.g. じゅうたい" style={inputStyle} />
+              </div>
+              <button
+                onClick={handleAdd}
+                disabled={addWord.isPending || !newWord.trim() || !newDef.trim()}
+                style={{
+                  padding: '0.65rem 1.25rem', borderRadius: 8, border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem',
+                  opacity: addWord.isPending ? 0.6 : 1, whiteSpace: 'nowrap',
+                }}
+              >
+                {addWord.isPending ? '…' : '+ Add'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'contents' }}>
+              <div>
+                <label style={labelStyle}>Reading</label>
+                <input value={newReading} onChange={(e) => setNewReading(e.target.value)} placeholder="e.g. じゅうたい" style={inputStyle} />
+              </div>
+              <button
+                onClick={handleAdd}
+                disabled={addWord.isPending || !newWord.trim() || !newDef.trim()}
+                style={{
+                  padding: '0.65rem 1.25rem', borderRadius: 8, border: 'none',
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  color: '#fff', fontWeight: 600, cursor: 'pointer', fontSize: '0.9rem',
+                  opacity: addWord.isPending ? 0.6 : 1, whiteSpace: 'nowrap',
+                }}
+              >
+                {addWord.isPending ? '…' : '+ Add'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -300,7 +325,7 @@ export default function Learn() {
         <input
           value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Search words or definitions…"
-          style={{ ...inputStyle, flex: 1, minWidth: 200, padding: '0.75rem 1rem' }}
+          style={{ ...inputStyle, flex: 1, minWidth: isMobile ? 0 : 200, padding: '0.75rem 1rem' }}
         />
         {selected.size > 0 && (
           <>
@@ -380,41 +405,63 @@ export default function Learn() {
                   borderRadius: 12,
                   padding: '1rem 1.25rem',
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: isMobile ? 'flex-start' : 'center',
+                  flexDirection: isMobile ? 'column' : 'row',
                   gap: '1rem',
                   transition: 'background 0.1s, border-color 0.1s',
                 }}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={() => toggleSelect(w.id)}
-                    style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#6366f1', flexShrink: 0 }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '1rem' }}>{w.word}</span>
-                      {w.reading && <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{w.reading}</span>}
-                      <span style={{ color: '#475569', fontSize: '0.75rem', background: 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: 4 }}>
-                        {w.language}
-                      </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(w.id)}
+                      style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#6366f1', flexShrink: 0 }}
+                    />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: '1rem' }}>{w.word}</span>
+                        {w.reading && <span style={{ color: '#64748b', fontSize: '0.8rem' }}>{w.reading}</span>}
+                        <span style={{ color: '#475569', fontSize: '0.75rem', background: 'rgba(255,255,255,0.04)', padding: '1px 6px', borderRadius: 4 }}>
+                          {w.language}
+                        </span>
+                      </div>
+                      <div style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: 2 }}>{w.definition}</div>
+                      {w.example && (
+                        <div style={{ color: '#475569', fontSize: '0.8rem', fontStyle: 'italic', marginTop: 2 }}>
+                          "{w.example}"
+                        </div>
+                      )}
                     </div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.875rem', marginTop: 2 }}>{w.definition}</div>
-                    {w.example && (
-                      <div style={{ color: '#475569', fontSize: '0.8rem', fontStyle: 'italic', marginTop: 2 }}>
-                        "{w.example}"
+                    {!isMobile && (
+                      <div style={{ flexShrink: 0, fontSize: '0.75rem', color: '#475569' }}>
+                        {new Date(w.created_at).toLocaleDateString()}
                       </div>
                     )}
+                    {!isMobile && (
+                      confirmDelete === w.id ? (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                          <button onClick={() => handleDelete(w.id)} style={dangerBtn}>Delete</button>
+                          <button onClick={() => setConfirmDelete(null)} style={cancelBtn}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDelete(w.id)} style={ghostBtn}>✕</button>
+                      )
+                    )}
                   </div>
-                  <div style={{ flexShrink: 0, fontSize: '0.75rem', color: '#475569' }}>
-                    {new Date(w.created_at).toLocaleDateString()}
-                  </div>
-                  {confirmDelete === w.id ? (
-                    <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-                      <button onClick={() => handleDelete(w.id)} style={dangerBtn}>Delete</button>
-                      <button onClick={() => setConfirmDelete(null)} style={cancelBtn}>Cancel</button>
+                  {isMobile && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#475569' }}>
+                        {new Date(w.created_at).toLocaleDateString()}
+                      </span>
+                      {confirmDelete === w.id ? (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button onClick={() => handleDelete(w.id)} style={dangerBtn}>Delete</button>
+                          <button onClick={() => setConfirmDelete(null)} style={cancelBtn}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmDelete(w.id)} style={ghostBtn}>✕</button>
+                      )}
                     </div>
-                  ) : (
-                    <button onClick={() => setConfirmDelete(w.id)} style={ghostBtn}>✕</button>
                   )}
                 </div>
               )

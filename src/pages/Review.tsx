@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import { useDueCards, useNewCards, useNewCardsLearnedToday } from '../hooks/useWords'
 import { useDecks } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
@@ -13,6 +14,7 @@ type CardWithWord = SrsCard & { words: Word }
 type Phase = 'idle' | 'learning' | 'reviewing' | 'done'
 
 export default function Review() {
+  const { isMobile } = useBreakpoint()
   const user = useAuthStore((s) => s.user)
   const [searchParams] = useSearchParams()
   const deckId = searchParams.get('deck') ?? undefined
@@ -68,7 +70,7 @@ export default function Review() {
   const isLoading = dueLoading || newLoading
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 700, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
         <Link to="/" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.875rem' }}>← Decks</Link>
       </div>

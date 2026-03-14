@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 
 export default function Footer() {
+  const { isMobile } = useBreakpoint()
   const year = new Date().getFullYear()
 
   return (
     <footer style={{
       borderTop: '1px solid rgba(255,255,255,0.06)',
       background: 'rgba(15,23,42,0.6)',
-      padding: '3rem 1.5rem 2rem',
+      padding: isMobile ? '2rem 1rem 1.5rem' : '3rem 1.5rem 2rem',
       marginTop: 'auto',
     }}>
       <div style={{
@@ -15,7 +17,7 @@ export default function Footer() {
         margin: '0 auto',
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-        gap: '2rem',
+        gap: isMobile ? '1.5rem' : '2rem',
       }}>
         {/* Brand */}
         <div>

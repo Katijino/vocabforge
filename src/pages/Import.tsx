@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import { useAuthStore } from '../stores/authStore'
 import { useBulkAddWords } from '../hooks/useWords'
 import { useDecks, useCreateDeck } from '../hooks/useDecks'
@@ -45,6 +46,7 @@ interface ApkgMappingState {
 }
 
 export default function Import() {
+  const { isMobile } = useBreakpoint()
   const user = useAuthStore((s) => s.user)
   const [searchParams] = useSearchParams()
   const { data: settings } = useUserSettings(user?.id ?? '')
@@ -247,7 +249,7 @@ export default function Import() {
   // ── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '2rem 1.5rem 5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: isMobile ? '1.25rem 1rem 3rem' : '2rem 1.5rem 5rem', color: '#f1f5f9' }}>
       {showUpgrade && <UpgradePrompt reason="words" onClose={() => setShowUpgrade(false)} />}
 
       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Import Words</h1>
@@ -263,7 +265,7 @@ export default function Import() {
         padding: 3,
         marginBottom: '2rem',
         border: '1px solid rgba(255,255,255,0.06)',
-        width: 'fit-content',
+        width: isMobile ? '100%' : 'fit-content',
       }}>
         {([
           { id: 'csv',      label: 'CSV / TSV' },
@@ -285,6 +287,7 @@ export default function Import() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              flex: isMobile ? 1 : undefined,
             }}
           >
             {t.label}
@@ -337,7 +340,7 @@ export default function Import() {
                 <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', fontWeight: 600, color: '#a5b4fc' }}>
                   Import from Anki
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '1rem' }}>
                   <div>
                     <div style={{ color: '#e2e8f0', fontSize: '0.825rem', fontWeight: 600, marginBottom: 6 }}>
                       .apkg (recommended)
@@ -471,9 +474,9 @@ export default function Import() {
             <button onClick={reset} style={{ ...secondaryBtn, cursor: 'pointer' }}>Change file</button>
           </div>
 
-          <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: 'hidden', marginBottom: '1.25rem' }}>
+          <div style={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, overflow: isMobile ? 'auto' : 'hidden', marginBottom: '1.25rem' }}>
             <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: isMobile ? 480 : undefined }}>
                 <thead>
                   <tr style={{ background: 'rgba(99,102,241,0.12)' }}>
                     {['Word', 'Definition', 'Reading'].map((h) => (
@@ -486,8 +489,8 @@ export default function Import() {
                 <tbody>
                   {rows.map((row, i) => (
                     <tr key={i} style={{ background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.015)' }}>
-                      <td style={{ padding: '9px 14px', color: '#e2e8f0', fontWeight: 600, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.word}</td>
-                      <td style={{ padding: '9px 14px', color: '#94a3b8', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.definition}</td>
+                      <td style={{ padding: '9px 14px', color: '#e2e8f0', fontWeight: 600, maxWidth: isMobile ? undefined : 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.word}</td>
+                      <td style={{ padding: '9px 14px', color: '#94a3b8', maxWidth: isMobile ? undefined : 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.definition}</td>
                       <td style={{ padding: '9px 14px', color: '#64748b', fontSize: '0.8rem' }}>{row.reading ?? '—'}</td>
                     </tr>
                   ))}
@@ -501,7 +504,7 @@ export default function Import() {
             <select
               value={selectedDeckId ?? ''}
               onChange={(e) => setSelectedDeckId(e.target.value || null)}
-              style={selectStyle}
+              style={{ ...selectStyle, minWidth: isMobile ? 0 : 220, width: isMobile ? '100%' : undefined }}
             >
               <option value="">— Auto-create deck —</option>
               {decks.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
@@ -697,6 +700,7 @@ const selectStyle: React.CSSProperties = {
   cursor: 'pointer',
   minWidth: 220,
 }
+
 
 const infoBox: React.CSSProperties = {
   background: 'rgba(99,102,241,0.06)',

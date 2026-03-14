@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import { useDecks, useCreateDeck, useUpdateDeck, useDeleteDeck, useDeckStats } from '../hooks/useDecks'
 import { useUserSettings } from '../hooks/useUserSettings'
 import { useGenerateStory } from '../hooks/useStories'
@@ -20,6 +21,7 @@ interface DeckCardProps {
 }
 
 function DeckCard({ deck, userId, language, onEdit, onDelete }: DeckCardProps) {
+  const { isMobile } = useBreakpoint()
   const { data: stats } = useDeckStats(deck.id)
   const generateStory = useGenerateStory()
   const addToast = useUIStore((s) => s.addToast)
@@ -127,8 +129,8 @@ function DeckCard({ deck, userId, language, onEdit, onDelete }: DeckCardProps) {
         >
           {generatingStory ? 'Generating…' : 'Story'}
         </button>
-        <button onClick={() => onEdit(deck)} style={{ ...iconBtn }}>✏️</button>
-        <button onClick={() => onDelete(deck)} style={{ ...iconBtn }}>🗑️</button>
+        <button onClick={() => onEdit(deck)} style={{ ...iconBtnStyle(isMobile) }}>✏️</button>
+        <button onClick={() => onDelete(deck)} style={{ ...iconBtnStyle(isMobile) }}>🗑️</button>
       </div>
     </div>
   )
@@ -252,6 +254,7 @@ function DeckModal({ deck, onSave, onClose }: DeckModalProps) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function Home() {
+  const { isMobile } = useBreakpoint()
   const user = useAuthStore((s) => s.user)
   const { data: settings } = useUserSettings(user?.id ?? '')
   const { data: decks = [] } = useDecks(user?.id ?? '')
@@ -304,7 +307,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ maxWidth: 1000, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
       {showModal && (
         <DeckModal
           deck={editingDeck}
@@ -348,7 +351,7 @@ export default function Home() {
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: '1rem',
         }}>
           {decks.map((deck) => (
@@ -410,15 +413,17 @@ const actionBtn: React.CSSProperties = {
   fontFamily: 'inherit',
 }
 
-const iconBtn: React.CSSProperties = {
-  padding: '0.4rem 0.5rem',
-  borderRadius: 7,
-  border: '1px solid rgba(255,255,255,0.07)',
-  background: 'transparent',
-  cursor: 'pointer',
-  fontSize: '0.875rem',
-  lineHeight: 1,
-  fontFamily: 'inherit',
+function iconBtnStyle(isMobile: boolean): React.CSSProperties {
+  return {
+    padding: isMobile ? '0.6rem 0.75rem' : '0.4rem 0.5rem',
+    borderRadius: 7,
+    border: '1px solid rgba(255,255,255,0.07)',
+    background: 'transparent',
+    cursor: 'pointer',
+    fontSize: isMobile ? '1rem' : '0.875rem',
+    lineHeight: 1,
+    fontFamily: 'inherit',
+  }
 }
 
 const labelStyle: React.CSSProperties = {

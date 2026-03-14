@@ -3,10 +3,12 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useStory } from '../hooks/useStories'
 import { useWords } from '../hooks/useWords'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import StoryViewer from '../components/StoryViewer'
 import TranslationViewer from '../components/TranslationViewer'
 
 export default function StoryPage() {
+  const { isMobile, isTablet } = useBreakpoint()
   const { id } = useParams<{ id: string }>()
   const user = useAuthStore((s) => s.user)
   const { data: story, isLoading, error } = useStory(id ?? '')
@@ -40,7 +42,7 @@ export default function StoryPage() {
   const translation = story.content_translation ?? null
 
   return (
-    <div style={{ maxWidth: translation ? 1400 : 760, margin: '0 auto', padding: '2.5rem 1.5rem 5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: isTablet ? '100%' : translation ? 1400 : 760, margin: '0 auto', padding: isMobile ? '1.25rem 1rem 3rem' : '2.5rem 1.5rem 5rem', color: '#f1f5f9' }}>
       <div style={{ marginBottom: '2rem' }}>
         <Link to="/stories" style={{ color: '#64748b', fontSize: '0.875rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           ← Back to Stories
@@ -68,7 +70,7 @@ export default function StoryPage() {
       {/* Story content */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: translation ? '1fr 1fr' : '1fr',
+        gridTemplateColumns: translation && !isTablet ? '1fr 1fr' : '1fr',
         gap: '1.5rem',
         marginBottom: '2rem',
       }}>
@@ -91,7 +93,7 @@ export default function StoryPage() {
         {translation && (
           <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 16, padding: '2rem' }}>
             <div style={{ color: '#64748b', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem' }}>
-              English Translation · <span style={{ opacity: 0.6 }}>hover to reveal</span>
+              English Translation · <span style={{ opacity: 0.6 }}>{isMobile ? 'tap to reveal' : 'hover to reveal'}</span>
             </div>
             <TranslationViewer
               translation={translation}

@@ -13,7 +13,7 @@ function splitSentences(text: string): string[] {
 }
 
 export default function StoryViewer({ content, vocabWords, onSentenceHover, hoveredSentenceIdx }: StoryViewerProps) {
-  const [tooltip, setTooltip] = useState<{ word: Word; x: number; y: number } | null>(null)
+  const [tooltip, setTooltip] = useState<{ word: Word; x: number; y: number; yBottom: number } | null>(null)
 
   const wordMap = useMemo(() => {
     const wm = new Map<string, Word>()
@@ -24,6 +24,16 @@ export default function StoryViewer({ content, vocabWords, onSentenceHover, hove
   }, [vocabWords])
 
   const sentences = useMemo(() => splitSentences(content), [content])
+
+  const HALF_W = 130, MARGIN = 8, TOOLTIP_H = 110
+  let clampedLeft = 0, topPos = 0, transform = 'translate(-50%, -100%)'
+  if (tooltip) {
+    const vw = window.innerWidth
+    clampedLeft = Math.min(Math.max(tooltip.x, HALF_W + MARGIN), vw - HALF_W - MARGIN)
+    const flipped = tooltip.y - TOOLTIP_H - 10 < 0
+    topPos = flipped ? tooltip.yBottom + 6 : tooltip.y - 10
+    transform = flipped ? 'translate(-50%, 0)' : 'translate(-50%, -100%)'
+  }
 
   return (
     <div style={{ position: 'relative' }}>
@@ -59,7 +69,7 @@ export default function StoryViewer({ content, vocabWords, onSentenceHover, hove
                     key={i}
                     onMouseEnter={(e) => {
                       const rect = e.currentTarget.getBoundingClientRect()
-                      setTooltip({ word: token.word!, x: rect.left + rect.width / 2, y: rect.top })
+                      setTooltip({ word: token.word!, x: rect.left + rect.width / 2, y: rect.top, yBottom: rect.bottom })
                     }}
                     onMouseLeave={() => setTooltip(null)}
                     style={{
@@ -84,9 +94,9 @@ export default function StoryViewer({ content, vocabWords, onSentenceHover, hove
       {tooltip && (
         <div style={{
           position: 'fixed',
-          left: tooltip.x,
-          top: tooltip.y - 10,
-          transform: 'translate(-50%, -100%)',
+          left: clampedLeft,
+          top: topPos,
+          transform,
           background: 'rgba(15,23,42,0.97)',
           border: '1px solid rgba(99,102,241,0.4)',
           borderRadius: 10,

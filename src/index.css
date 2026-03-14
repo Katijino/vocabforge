@@ -77,3 +77,9 @@ a {
   outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
+
+/* Remove 300ms tap delay on iOS */
+button, a { touch-action: manipulation; }
+
+/* Allow sticky nav's absolute-positioned drawer to be visible */
+@media (max-width: 767px) { nav { overflow: visible !important; } }

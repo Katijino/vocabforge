@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import { useUserSettings } from '../hooks/useUserSettings'
+import { useBreakpoint } from '../hooks/useBreakpoint'
 import { supabase } from '../lib/supabase'
 
 function isValidRedirectUrl(url: unknown): url is string {
@@ -15,6 +16,7 @@ function isValidRedirectUrl(url: unknown): url is string {
 }
 
 export default function Billing() {
+  const { isMobile } = useBreakpoint()
   const user = useAuthStore((s) => s.user)
   const { data: settings } = useUserSettings(user?.id ?? '')
   const [loading, setLoading] = useState(false)
@@ -85,13 +87,13 @@ export default function Billing() {
   }
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 1.5rem', color: '#f1f5f9' }}>
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: isMobile ? '1.25rem 1rem' : '2rem 1.5rem', color: '#f1f5f9' }}>
       <h1 style={{ fontSize: '1.75rem', fontWeight: 700, margin: '0 0 0.5rem' }}>Plans & Billing</h1>
       <p style={{ color: '#64748b', margin: '0 0 2.5rem', fontSize: '0.9rem' }}>
         Current plan: <strong style={{ color: isPro ? '#a5b4fc' : '#94a3b8' }}>{isPro ? 'Pro' : 'Free'}</strong>
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
         {/* Free plan */}
         <div style={{
           ...cardStyle,
